@@ -16,6 +16,12 @@ export const EDUQR_API = {
     users: {
       profile: '/api/v1/users/profile',
       updateProfile: '/api/v1/users/profile',
+      list: '/api/v1/users/all',
+      create: '/api/v1/users/create',
+      getById: (id) => `/api/v1/users/${id}`,
+      update: (id) => `/api/v1/users/${id}`,
+      delete: (id) => `/api/v1/users/${id}`,
+      updateRole: (id) => `/api/v1/users/${id}/role`,
     },
     events: {
       list: '/api/v1/events',
@@ -23,6 +29,7 @@ export const EDUQR_API = {
       getById: (id) => `/api/v1/events/${id}`,
       update: (id) => `/api/v1/events/${id}`,
       delete: (id) => `/api/v1/events/${id}`,
+      range: '/api/v1/events/range',
     },
   },
 };

@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { createContext, useEffect, useReducer, useCallback, useMemo } from 'react';
+import { createContext, useContext, useEffect, useReducer, useCallback, useMemo } from 'react';
 // utils
 import localStorageAvailable from '../utils/localStorageAvailable';
 //
@@ -60,6 +60,19 @@ export const AuthContext = createContext(null);
 
 // ----------------------------------------------------------------------
 
+// Hook pour utiliser le contexte d'authentification
+export const useAuthContext = () => {
+  const context = useContext(AuthContext);
+
+  if (!context) {
+    throw new Error('useAuthContext must be used within an AuthProvider');
+  }
+
+  return context;
+};
+
+// ----------------------------------------------------------------------
+
 AuthProvider.propTypes = {
   children: PropTypes.node,
 };
@@ -77,7 +90,8 @@ export function AuthProvider({ children }) {
         setSession(accessToken);
 
         // Verify token by getting user profile
-        const user = await userAPI.getProfile();
+        const response = await userAPI.getProfile();
+        const user = response.data;
 
         dispatch({
           type: 'INITIAL',
@@ -116,8 +130,8 @@ export function AuthProvider({ children }) {
   // LOGIN
   const login = useCallback(async (email, password) => {
     try {
-      const response = await authAPI.login(email, password);
-      const { token, user } = response;
+      const response = await authAPI.login({ email, password });
+      const { token, user } = response.data;
 
       setSession(token);
 
@@ -136,11 +150,12 @@ export function AuthProvider({ children }) {
   // REGISTER
   const register = useCallback(async (email, password, firstName, lastName) => {
     try {
-      const user = await authAPI.register(email, password, firstName, lastName);
+      const response = await authAPI.register({ email, password, first_name: firstName, last_name: lastName });
+      const user = response.data;
       
       // After registration, login automatically
-      const loginResponse = await authAPI.login(email, password);
-      const { token } = loginResponse;
+      const loginResponse = await authAPI.login({ email, password });
+      const { token } = loginResponse.data;
 
       setSession(token);
 

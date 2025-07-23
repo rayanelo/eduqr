@@ -43,6 +43,7 @@ const navConfig = [
           { title: 'Four', path: PATH_DASHBOARD.user.four },
           { title: 'Five', path: PATH_DASHBOARD.user.five },
           { title: 'Six', path: PATH_DASHBOARD.user.six },
+          { title: 'Gestion des utilisateurs', path: PATH_DASHBOARD.user.management },
         ],
       },
     ],

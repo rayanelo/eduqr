@@ -33,7 +33,7 @@ func (r *Router) SetupRoutes() *gin.Engine {
 	// CORS configuration
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:3000", "http://localhost:3001"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
@@ -62,9 +62,19 @@ func (r *Router) SetupRoutes() *gin.Engine {
 		users := v1.Group("/users")
 		users.Use(r.authMiddleware.AuthMiddleware())
 		{
+			// Profile routes (users can manage their own profile)
 			users.GET("/profile", r.userController.GetProfile)
 			users.PUT("/profile", r.userController.UpdateProfile)
-			users.GET("/:id", r.userController.GetUserByID)
+
+			// User management routes with role-based permissions
+			users.GET("/all", r.userController.GetAllUsers)    // All authenticated users can view based on their role
+			users.POST("/create", r.userController.CreateUser) // Only users who can manage roles
+
+			// Parameterized routes with role-based permissions
+			users.GET("/:id", r.userController.GetUserByID)           // View permissions based on role
+			users.PUT("/:id", r.userController.UpdateUser)            // Manage permissions based on role
+			users.DELETE("/:id", r.userController.DeleteUser)         // Manage permissions based on role
+			users.PATCH("/:id/role", r.userController.UpdateUserRole) // Manage permissions based on role
 		}
 
 		// Event routes (authentication required)

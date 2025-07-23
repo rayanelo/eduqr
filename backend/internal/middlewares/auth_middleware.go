@@ -2,9 +2,11 @@ package middlewares
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
+	"eduqr-backend/internal/models"
 	"eduqr-backend/pkg/utils"
 
 	"github.com/gin-gonic/gin"
@@ -64,7 +66,7 @@ func (m *AuthMiddleware) AuthMiddleware() gin.HandlerFunc {
 	}
 }
 
-// RoleMiddleware checks if user has required role
+// RoleMiddleware checks if user has required role or higher
 func (m *AuthMiddleware) RoleMiddleware(requiredRole string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userRole, exists := c.Get("user_role")
@@ -74,7 +76,8 @@ func (m *AuthMiddleware) RoleMiddleware(requiredRole string) gin.HandlerFunc {
 			return
 		}
 
-		if userRole.(string) != requiredRole && userRole.(string) != "admin" {
+		// Check if user has the required role or higher
+		if !hasRoleOrHigher(userRole.(string), requiredRole) {
 			c.JSON(http.StatusForbidden, gin.H{"error": "insufficient permissions"})
 			c.Abort()
 			return
@@ -82,6 +85,105 @@ func (m *AuthMiddleware) RoleMiddleware(requiredRole string) gin.HandlerFunc {
 
 		c.Next()
 	}
+}
+
+// CanManageUserMiddleware checks if the current user can manage the target user
+func (m *AuthMiddleware) CanManageUserMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userRole, exists := c.Get("user_role")
+		if !exists {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+			c.Abort()
+			return
+		}
+
+		// Get target user ID from URL parameter
+		idStr := c.Param("id")
+		if idStr == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "user ID required"})
+			c.Abort()
+			return
+		}
+
+		id, err := strconv.ParseUint(idStr, 10, 32)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user ID"})
+			c.Abort()
+			return
+		}
+
+		// Get current user ID
+		currentUserID, exists := c.Get("user_id")
+		if !exists {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+			c.Abort()
+			return
+		}
+
+		// If user is trying to manage themselves, allow it
+		if currentUserID.(uint) == uint(id) {
+			c.Next()
+			return
+		}
+
+		// Set target user ID and user role in context for controller to check permissions
+		c.Set("target_user_id", uint(id))
+		c.Set("current_user_role", userRole.(string))
+		c.Next()
+	}
+}
+
+// CanViewUserMiddleware checks if the current user can view the target user
+func (m *AuthMiddleware) CanViewUserMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userRole, exists := c.Get("user_role")
+		if !exists {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+			c.Abort()
+			return
+		}
+
+		// Get target user ID from URL parameter
+		idStr := c.Param("id")
+		if idStr == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "user ID required"})
+			c.Abort()
+			return
+		}
+
+		id, err := strconv.ParseUint(idStr, 10, 32)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user ID"})
+			c.Abort()
+			return
+		}
+
+		// Get current user ID
+		currentUserID, exists := c.Get("user_id")
+		if !exists {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+			c.Abort()
+			return
+		}
+
+		// If user is trying to view themselves, allow it
+		if currentUserID.(uint) == uint(id) {
+			c.Next()
+			return
+		}
+
+		// Set target user ID and user role in context for controller to check permissions
+		c.Set("target_user_id", uint(id))
+		c.Set("current_user_role", userRole.(string))
+		c.Next()
+	}
+}
+
+// hasRoleOrHigher checks if userRole has the same or higher privileges than requiredRole
+func hasRoleOrHigher(userRole, requiredRole string) bool {
+	userLevel := models.RoleHierarchy[userRole]
+	requiredLevel := models.RoleHierarchy[requiredRole]
+	return userLevel >= requiredLevel
 }
 
 // OptionalAuthMiddleware is like AuthMiddleware but doesn't require authentication

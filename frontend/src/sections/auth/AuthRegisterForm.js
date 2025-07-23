@@ -18,23 +18,34 @@ export default function AuthRegisterForm() {
   const { register } = useAuthContext();
 
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const RegisterSchema = Yup.object().shape({
-    firstName: Yup.string().required('First name is required'),
-    lastName: Yup.string().required('Last name is required'),
-    email: Yup.string().required('Email is required').email('Email must be a valid email address'),
-    password: Yup.string().required('Password is required').min(6, 'Password must be at least 6 characters'),
-    confirmPassword: Yup.string()
-      .required('Please confirm your password')
-      .oneOf([Yup.ref('password')], 'Passwords must match'),
+    first_name: Yup.string().required('Le prénom est requis'),
+    last_name: Yup.string().required('Le nom est requis'),
+    email: Yup.string().required('L\'email est requis').email('Email invalide'),
+    phone: Yup.string().required('Le numéro de téléphone est requis'),
+    address: Yup.string().required('L\'adresse est requise'),
+    password: Yup.string()
+      .required('Le mot de passe est requis')
+      .min(8, 'Le mot de passe doit contenir au moins 8 caractères')
+      .matches(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
+        'Le mot de passe doit contenir au moins une minuscule, une majuscule, un chiffre et un caractère spécial'
+      ),
+    confirm_password: Yup.string()
+      .required('La confirmation du mot de passe est requise')
+      .oneOf([Yup.ref('password'), null], 'Les mots de passe doivent correspondre'),
   });
 
   const defaultValues = {
-    firstName: '',
-    lastName: '',
+    first_name: '',
+    last_name: '',
     email: '',
+    phone: '',
+    address: '',
     password: '',
-    confirmPassword: '',
+    confirm_password: '',
   };
 
   const methods = useForm({
@@ -50,12 +61,12 @@ export default function AuthRegisterForm() {
 
   const onSubmit = async (data) => {
     try {
-      await register(data.email, data.password, data.firstName, data.lastName);
+      await register(data);
     } catch (error) {
       console.error('Register error:', error);
 
       // Handle different types of errors
-      let errorMessage = 'An error occurred during registration';
+      let errorMessage = 'Une erreur est survenue lors de l\'inscription';
       
       if (error.error) {
         errorMessage = error.error;
@@ -77,15 +88,19 @@ export default function AuthRegisterForm() {
         {!!errors.afterSubmit && <Alert severity="error">{errors.afterSubmit.message}</Alert>}
 
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-          <RHFTextField name="firstName" label="First name" />
-          <RHFTextField name="lastName" label="Last name" />
+          <RHFTextField name="first_name" label="Prénom" />
+          <RHFTextField name="last_name" label="Nom" />
         </Stack>
 
-        <RHFTextField name="email" label="Email address" />
+        <RHFTextField name="email" label="Adresse email" />
+
+        <RHFTextField name="phone" label="Numéro de téléphone" />
+
+        <RHFTextField name="address" label="Adresse" multiline rows={2} />
 
         <RHFTextField
           name="password"
-          label="Password"
+          label="Mot de passe"
           type={showPassword ? 'text' : 'password'}
           InputProps={{
             endAdornment: (
@@ -99,9 +114,18 @@ export default function AuthRegisterForm() {
         />
 
         <RHFTextField
-          name="confirmPassword"
-          label="Confirm Password"
-          type={showPassword ? 'text' : 'password'}
+          name="confirm_password"
+          label="Confirmation du mot de passe"
+          type={showConfirmPassword ? 'text' : 'password'}
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton onClick={() => setShowConfirmPassword(!showConfirmPassword)} edge="end">
+                  <Iconify icon={showConfirmPassword ? 'eva:eye-fill' : 'eva:eye-off-fill'} />
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
         />
       </Stack>
 
@@ -119,10 +143,9 @@ export default function AuthRegisterForm() {
             bgcolor: 'text.primary',
             color: (theme) => (theme.palette.mode === 'light' ? 'common.white' : 'grey.800'),
           },
-          mt: 3,
         }}
       >
-        Register
+        S'inscrire
       </LoadingButton>
     </FormProvider>
   );

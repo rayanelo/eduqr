@@ -19,6 +19,7 @@ import {
   RegisterPage,
   PageThree,
   CalendarPage,
+  UserManagementPage,
 } from './elements';
 
 // ----------------------------------------------------------------------
@@ -67,6 +68,7 @@ export default function Router() {
             { path: 'four', element: <PageFour /> },
             { path: 'five', element: <PageFive /> },
             { path: 'six', element: <PageSix /> },
+            { path: 'management', element: <UserManagementPage /> },
           ],
         },
       ],

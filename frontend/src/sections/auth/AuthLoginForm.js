@@ -35,7 +35,6 @@ export default function AuthLoginForm() {
   });
 
   const {
-    reset,
     setError,
     handleSubmit,
     formState: { errors, isSubmitting },

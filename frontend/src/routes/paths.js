@@ -10,6 +10,7 @@ const ROOTS_DASHBOARD = '/dashboard';
 
 export const PATH_AUTH = {
   login: '/login',
+  register: '/register',
 };
 
 export const PATH_DASHBOARD = {
@@ -23,5 +24,6 @@ export const PATH_DASHBOARD = {
     four: path(ROOTS_DASHBOARD, '/user/four'),
     five: path(ROOTS_DASHBOARD, '/user/five'),
     six: path(ROOTS_DASHBOARD, '/user/six'),
+    management: path(ROOTS_DASHBOARD, '/user/management'),
   },
 };

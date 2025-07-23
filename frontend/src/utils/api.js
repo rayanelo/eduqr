@@ -32,70 +32,37 @@ apiClient.interceptors.response.use(
       localStorage.removeItem('accessToken');
       window.location.href = '/login';
     }
-    return Promise.reject(error.response?.data || error);
+    return Promise.reject(error);
   }
 );
 
 // Auth API
 export const authAPI = {
-  login: async (email, password) => {
-    const response = await apiClient.post(EDUQR_API.endpoints.auth.login, {
-      email,
-      password,
-    });
-    return response.data;
-  },
-
-  register: async (email, password, firstName, lastName) => {
-    const response = await apiClient.post(EDUQR_API.endpoints.auth.register, {
-      email,
-      password,
-      first_name: firstName,
-      last_name: lastName,
-    });
-    return response.data;
-  },
+  login: (credentials) => apiClient.post(EDUQR_API.endpoints.auth.login, credentials),
+  register: (userData) => apiClient.post(EDUQR_API.endpoints.auth.register, userData),
 };
 
 // User API
 export const userAPI = {
-  getProfile: async () => {
-    const response = await apiClient.get(EDUQR_API.endpoints.users.profile);
-    return response.data;
-  },
-
-  updateProfile: async (userData) => {
-    const response = await apiClient.put(EDUQR_API.endpoints.users.updateProfile, userData);
-    return response.data;
-  },
+  getProfile: () => apiClient.get(EDUQR_API.endpoints.users.profile),
+  updateProfile: (data) => apiClient.put(EDUQR_API.endpoints.users.updateProfile, data),
+  getAllUsers: () => apiClient.get(EDUQR_API.endpoints.users.list),
+  getUserById: (id) => apiClient.get(EDUQR_API.endpoints.users.getById(id)),
+  createUser: (userData) => apiClient.post(EDUQR_API.endpoints.users.create, userData),
+  updateUser: (id, userData) => apiClient.put(EDUQR_API.endpoints.users.update(id), userData),
+  deleteUser: (id) => apiClient.delete(EDUQR_API.endpoints.users.delete(id)),
+  updateUserRole: (id, role) => apiClient.patch(EDUQR_API.endpoints.users.updateRole(id), { role }),
 };
 
 // Event API
 export const eventAPI = {
-  getEvents: async () => {
-    const response = await apiClient.get(EDUQR_API.endpoints.events.list);
-    return response.data;
-  },
-
-  createEvent: async (eventData) => {
-    const response = await apiClient.post(EDUQR_API.endpoints.events.create, eventData);
-    return response.data;
-  },
-
-  getEventById: async (id) => {
-    const response = await apiClient.get(EDUQR_API.endpoints.events.getById(id));
-    return response.data;
-  },
-
-  updateEvent: async (id, eventData) => {
-    const response = await apiClient.put(EDUQR_API.endpoints.events.update(id), eventData);
-    return response.data;
-  },
-
-  deleteEvent: async (id) => {
-    const response = await apiClient.delete(EDUQR_API.endpoints.events.delete(id));
-    return response.data;
-  },
+  getEvents: () => apiClient.get(EDUQR_API.endpoints.events.list),
+  createEvent: (eventData) => apiClient.post(EDUQR_API.endpoints.events.create, eventData),
+  getEventById: (id) => apiClient.get(EDUQR_API.endpoints.events.getById(id)),
+  updateEvent: (id, eventData) => apiClient.put(EDUQR_API.endpoints.events.update(id), eventData),
+  deleteEvent: (id) => apiClient.delete(EDUQR_API.endpoints.events.delete(id)),
+  getEventsByDateRange: (startDate, endDate) => 
+    apiClient.get(EDUQR_API.endpoints.events.range, { params: { start_date: startDate, end_date: endDate } }),
 };
 
 export default apiClient; 
