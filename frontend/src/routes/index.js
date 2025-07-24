@@ -16,6 +16,7 @@ import PageSix from '../pages/PageSix';
 import UserManagementPage from '../pages/dashboard/UserManagementPage';
 import RoomManagementPage from '../pages/dashboard/RoomManagementPage';
 import SubjectManagementPage from '../pages/dashboard/SubjectManagementPage';
+import CourseManagementPage from '../pages/dashboard/CourseManagementPage';
 import ProfilePage from '../pages/dashboard/ProfilePage';
 import CalendarPage from '../pages/dashboard/CalendarPage';
 
@@ -35,6 +36,7 @@ export default function Router() {
         { path: 'user-management', element: <UserManagementPage /> },
         { path: 'room-management', element: <RoomManagementPage /> },
         { path: 'subject-management', element: <SubjectManagementPage /> },
+        { path: 'course-management', element: <CourseManagementPage /> },
         { path: 'profile', element: <ProfilePage /> },
         { path: 'calendar', element: <CalendarPage /> },
         { path: 'five', element: <PageFive /> },

@@ -11,13 +11,9 @@ export const useSubjects = () => {
     setLoading(true);
     setError(null);
     try {
-      console.log('Fetching subjects...');
       const response = await apiClient.get('/api/v1/admin/subjects');
-      console.log('Subjects response:', response.data);
       setSubjects(response.data.data || []);
     } catch (err) {
-      console.error('Error fetching subjects:', err);
-      console.error('Error response:', err.response);
       setError(err.response?.data?.error || 'Erreur lors de la récupération des matières');
     } finally {
       setLoading(false);

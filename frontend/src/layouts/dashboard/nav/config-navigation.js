@@ -4,6 +4,8 @@ import { useLocales } from '../../../locales';
 
 import { usePermissions } from '../../../hooks/usePermissions';
 
+
+
 // components
 import SvgColor from '../../../components/svg-color';
 
@@ -36,7 +38,7 @@ export function useNavData() {
       // MANAGEMENT
       // ----------------------------------------------------------------------
       {
-        subheader: 'management',
+        subheader: 'gestions',
         items: [
           ...(canManageUsers
             ? [
@@ -52,7 +54,7 @@ export function useNavData() {
                 {
                   title: 'Salles',
                   path: '/dashboard/room-management',
-                  icon: <SvgColor src="/assets/icons/navbar/ic_building.svg" />,
+                  icon: <SvgColor src="/assets/icons/navbar/ic_booking.svg" />,
                 },
               ]
             : []),
@@ -61,7 +63,12 @@ export function useNavData() {
                 {
                   title: 'Matières',
                   path: '/dashboard/subject-management',
-                  icon: <SvgColor src="/assets/icons/navbar/ic_book.svg" />,
+                  icon: <SvgColor src="/assets/icons/navbar/ic_file.svg" />,
+                },
+                {
+                  title: 'Cours',
+                  path: '/dashboard/course-management',
+                  icon: <SvgColor src="/assets/icons/navbar/ic_kanban.svg" />,
                 },
               ]
             : []),

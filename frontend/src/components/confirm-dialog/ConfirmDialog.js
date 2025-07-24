@@ -1,58 +1,48 @@
-import PropTypes from 'prop-types';
-// @mui
+import React from 'react';
 import {
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   Button,
+  Typography,
+  Box,
 } from '@mui/material';
 
-// ----------------------------------------------------------------------
-
-ConfirmDialog.propTypes = {
-  open: PropTypes.bool,
-  title: PropTypes.string,
-  content: PropTypes.string,
-  action: PropTypes.node,
-  onClose: PropTypes.func,
-  onConfirm: PropTypes.func,
-  confirmText: PropTypes.string,
-  cancelText: PropTypes.string,
-};
-
-export default function ConfirmDialog({ 
-  title, 
-  content, 
-  action, 
-  open, 
-  onClose, 
+export function ConfirmDialog({
+  open,
+  onClose,
   onConfirm,
+  title = 'Confirmation',
+  content = 'Êtes-vous sûr de vouloir effectuer cette action ?',
   confirmText = 'Confirmer',
   cancelText = 'Annuler',
-  ...other 
+  confirmColor = 'error',
+  loading = false,
 }) {
   return (
-    <Dialog fullWidth maxWidth="xs" open={open} onClose={onClose} {...other}>
-      <DialogTitle sx={{ pb: 2 }}>
-        {title}
-      </DialogTitle>
-
-      {content && (
-        <DialogContent sx={{ typography: 'body2' }}>
-          {content}
-        </DialogContent>
-      )}
-
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle>{title}</DialogTitle>
+      <DialogContent>
+        <Box sx={{ mt: 1 }}>
+          {typeof content === 'string' ? (
+            <Typography>{content}</Typography>
+          ) : (
+            content
+          )}
+        </Box>
+      </DialogContent>
       <DialogActions>
-        {action}
-        {onConfirm && (
-          <Button variant="contained" color="primary" onClick={onConfirm}>
-            {confirmText}
-          </Button>
-        )}
-        <Button variant="outlined" color="inherit" onClick={onClose}>
+        <Button onClick={onClose} disabled={loading}>
           {cancelText}
+        </Button>
+        <Button
+          onClick={onConfirm}
+          color={confirmColor}
+          variant="contained"
+          disabled={loading}
+        >
+          {loading ? 'Chargement...' : confirmText}
         </Button>
       </DialogActions>
     </Dialog>

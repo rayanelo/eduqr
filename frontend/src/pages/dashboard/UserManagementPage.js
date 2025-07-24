@@ -20,9 +20,9 @@ import Iconify from '../../components/iconify';
 import { useSnackbar } from '../../components/snackbar';
 import CustomBreadcrumbs from '../../components/custom-breadcrumbs';
 import { useSettingsContext } from '../../components/settings';
-import DataTable from '../../components/data-table/DataTable';
+import { DataTable } from '../../components/data-table';
 import UserForm from '../../components/user-form/UserForm';
-import ConfirmDialog from '../../components/confirm-dialog/ConfirmDialog';
+import { ConfirmDialog } from '../../components/confirm-dialog';
 import UserInfo from '../../components/user-info/UserInfo';
 
 // ----------------------------------------------------------------------

@@ -14,6 +14,7 @@ type Router struct {
 	eventController   *controllers.EventController
 	roomController    *controllers.RoomController
 	subjectController *controllers.SubjectController
+	courseController  *controllers.CourseController
 	authMiddleware    *middlewares.AuthMiddleware
 }
 
@@ -22,6 +23,7 @@ func NewRouter(
 	eventController *controllers.EventController,
 	roomController *controllers.RoomController,
 	subjectController *controllers.SubjectController,
+	courseController *controllers.CourseController,
 	authMiddleware *middlewares.AuthMiddleware,
 ) *Router {
 	return &Router{
@@ -29,6 +31,7 @@ func NewRouter(
 		eventController:   eventController,
 		roomController:    roomController,
 		subjectController: subjectController,
+		courseController:  courseController,
 		authMiddleware:    authMiddleware,
 	}
 }
@@ -120,6 +123,22 @@ func (r *Router) SetupRoutes() *gin.Engine {
 			subjects.GET("/:id", r.subjectController.GetSubjectByID)
 			subjects.PUT("/:id", r.subjectController.UpdateSubject)
 			subjects.DELETE("/:id", r.subjectController.DeleteSubject)
+		}
+
+		// Course routes (admin authentication required)
+		courses := v1.Group("/admin/courses")
+		courses.Use(r.authMiddleware.AuthMiddleware())
+		courses.Use(r.authMiddleware.RoleMiddleware("admin"))
+		{
+			courses.GET("", r.courseController.GetAllCourses)
+			courses.POST("", r.courseController.CreateCourse)
+			courses.GET("/:id", r.courseController.GetCourseByID)
+			courses.PUT("/:id", r.courseController.UpdateCourse)
+			courses.DELETE("/:id", r.courseController.DeleteCourse)
+			courses.GET("/by-date-range", r.courseController.GetCoursesByDateRange)
+			courses.GET("/by-room/:roomId", r.courseController.GetCoursesByRoom)
+			courses.GET("/by-teacher/:teacherId", r.courseController.GetCoursesByTeacher)
+			courses.POST("/check-conflicts", r.courseController.CheckConflicts)
 		}
 	}
 

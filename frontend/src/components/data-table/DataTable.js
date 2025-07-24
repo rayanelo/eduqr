@@ -1,333 +1,171 @@
-import PropTypes from 'prop-types';
-import { useState } from 'react';
-// @mui
+import React, { useState } from 'react';
 import {
-  Card,
   Table,
   TableBody,
-  IconButton,
-  TableContainer,
-  TableRow,
   TableCell,
-  Chip,
-  Avatar,
-  Menu,
-  MenuItem,
-  ListItemIcon,
-  ListItemText,
-  Divider,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  TablePagination,
+  TableSortLabel,
 } from '@mui/material';
-// components
-import Iconify from '../iconify';
-import Scrollbar from '../scrollbar';
-import { TableEmptyRows, TableHeadCustom, TableNoData, TablePaginationCustom } from './table-components';
-import { useTable, getComparator, emptyRows, applyFilter } from './use-table';
-import { usePermissions, ROLES } from '../../hooks/usePermissions';
 
-// ----------------------------------------------------------------------
+export function DataTable({ data, columns, onAddNew, isFiltered = false }) {
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [orderBy, setOrderBy] = useState('');
+  const [order, setOrder] = useState('asc');
 
-DataTable.propTypes = {
-  data: PropTypes.array,
-  columns: PropTypes.array,
-  table: PropTypes.object,
-  tableData: PropTypes.array,
-  dense: PropTypes.bool,
-  isFiltered: PropTypes.bool,
-  onDeleteRow: PropTypes.func,
-  onEditRow: PropTypes.func,
-  onViewRow: PropTypes.func,
-  onUpdateRole: PropTypes.func,
-  onAddNew: PropTypes.func,
-  deleteRows: PropTypes.func,
-  sx: PropTypes.object,
-};
-
-export default function DataTable({
-  data,
-  columns,
-  table,
-  tableData,
-  dense,
-  isFiltered,
-  onDeleteRow,
-  onEditRow,
-  onViewRow,
-  onUpdateRole,
-  onAddNew,
-  deleteRows,
-  sx,
-  ...other
-}) {
-  const {
-    dense: denseTable,
-    page,
-    order,
-    orderBy,
-    rowsPerPage,
-    selected,
-    onSelectRow,
-    onSort,
-    onChangePage,
-    onChangeRowsPerPage,
-    onChangeDense,
-  } = useTable();
-
-  const denseHeight = denseTable ? 52 : 72;
-
-  const dataFiltered = applyFilter({
-    inputData: tableData,
-    comparator: getComparator(order, orderBy),
-  });
-
-  const dataInPage = dataFiltered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
-
-  const isNotFound = dataFiltered.length === 0;
-
-
-
-  const handleDeleteRow = (id) => {
-    const deleteRow = tableData.filter((row) => row.id !== id);
-    table.setData(deleteRow);
-
-    if (selected.includes(id)) {
-      const newSelected = selected.filter((selectedId) => selectedId !== id);
-      table.setSelected(newSelected);
-    }
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
   };
 
-  const handleEditRow = (id) => {
-    onEditRow(id);
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
   };
 
-  const handleViewRow = (id) => {
-    onViewRow(id);
+  const handleRequestSort = (property) => {
+    const isAsc = orderBy === property && order === 'asc';
+    setOrder(isAsc ? 'desc' : 'asc');
+    setOrderBy(property);
   };
 
-  const handleUpdateRole = (id, role) => {
-    onUpdateRole(id, role);
+  const sortedData = React.useMemo(() => {
+    if (!orderBy) return data;
+
+    return [...data].sort((a, b) => {
+      const aValue = a[orderBy];
+      const bValue = b[orderBy];
+
+      if (aValue < bValue) {
+        return order === 'asc' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return order === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+  }, [data, orderBy, order]);
+
+  const paginatedData = sortedData.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
+
+  const createSortHandler = (property) => () => {
+    handleRequestSort(property);
   };
 
   return (
-    <Card sx={{ ...sx }}>
-      <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
-        <Scrollbar>
-          <Table size={dense ? 'small' : 'medium'} sx={{ minWidth: 960 }}>
-            <TableHeadCustom
-              order={order}
-              orderBy={orderBy}
-              headLabel={columns}
-              onSort={onSort}
-            />
-
-            <TableBody>
-              {dataInPage.map((row) => (
-                <DataTableRow
-                  key={row.id}
-                  row={row}
-                  columns={columns}
-                  selected={selected.includes(row.id)}
-                  onSelectRow={() => onSelectRow(row.id)}
-                  onEditRow={() => handleEditRow(row.id)}
-                  onViewRow={() => handleViewRow(row.id)}
-                  onUpdateRole={(role) => handleUpdateRole(row.id, role)}
-                  onDeleteRow={() => handleDeleteRow(row.id)}
-                />
+    <Paper sx={{ width: '100%', overflow: 'hidden', boxShadow: 2 }}>
+      <TableContainer sx={{ maxHeight: 440 }}>
+        <Table stickyHeader>
+          <TableHead>
+            <TableRow>
+              {columns.map((column) => (
+                <TableCell
+                  key={column.id}
+                  align={column.align || 'left'}
+                  style={{ minWidth: column.minWidth, width: column.width }}
+                  sortDirection={orderBy === column.id ? order : false}
+                  sx={{
+                    backgroundColor: 'primary.main',
+                    color: 'primary.contrastText',
+                    fontWeight: 'bold',
+                    '& .MuiTableSortLabel-root': {
+                      color: 'primary.contrastText',
+                      '&:hover': {
+                        color: 'primary.light',
+                      },
+                      '&.Mui-active': {
+                        color: 'primary.light',
+                        '& .MuiTableSortLabel-icon': {
+                          color: 'primary.light',
+                        },
+                      },
+                    },
+                  }}
+                >
+                  {column.sortable !== false ? (
+                    <TableSortLabel
+                      active={orderBy === column.id}
+                      direction={orderBy === column.id ? order : 'asc'}
+                      onClick={createSortHandler(column.id)}
+                    >
+                      {column.label}
+                    </TableSortLabel>
+                  ) : (
+                    column.label
+                  )}
+                </TableCell>
               ))}
-
-              <TableEmptyRows
-                height={denseHeight}
-                emptyRows={emptyRows(page, rowsPerPage, tableData.length)}
-              />
-
-              {dataFiltered.length === 0 && <TableNoData isNotFound={isNotFound} columns={columns} onAddNew={onAddNew} />}
-            </TableBody>
-          </Table>
-        </Scrollbar>
-      </TableContainer>
-
-      <TablePaginationCustom
-        count={dataFiltered.length}
-        page={page}
-        rowsPerPage={rowsPerPage}
-        onPageChange={onChangePage}
-        onRowsPerPageChange={onChangeRowsPerPage}
-        dense={denseTable}
-        onChangeDense={onChangeDense}
-      />
-    </Card>
-  );
-}
-
-// ----------------------------------------------------------------------
-
-function DataTableRow({
-  row,
-  columns,
-  selected,
-  onSelectRow,
-  onEditRow,
-  onViewRow,
-  onUpdateRole,
-  onDeleteRow,
-}) {
-  const [anchorEl, setAnchorEl] = useState(null);
-  const { canUpdateUser, canDeleteUser, canChangeUserRole, getPromotableRoles } = usePermissions();
-
-  const handleOpenMenu = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleCloseMenu = () => {
-    setAnchorEl(null);
-  };
-
-  const renderCell = (column, value) => {
-    switch (column.type) {
-      case 'avatar':
-        return (
-          <Avatar alt={value} src={value} sx={{ width: 40, height: 40 }}>
-            {value?.charAt(0)?.toUpperCase()}
-          </Avatar>
-        );
-      case 'status':
-        return (
-          <Chip
-            label={value}
-            color={value === 'active' ? 'success' : 'warning'}
-            size="small"
-          />
-        );
-      case 'role':
-        const getRoleColor = (role) => {
-          switch (role) {
-            case 'super_admin':
-              return 'error';
-            case 'admin':
-              return 'warning';
-            case 'professeur':
-              return 'info';
-            case 'etudiant':
-              return 'default';
-            default:
-              return 'default';
-          }
-        };
-
-        const getRoleLabel = (role) => {
-          switch (role) {
-            case 'super_admin':
-              return 'Super Admin';
-            case 'admin':
-              return 'Admin';
-            case 'professeur':
-              return 'Professeur';
-            case 'etudiant':
-              return 'Étudiant';
-            default:
-              return role;
-          }
-        };
-
-        return (
-          <Chip
-            label={getRoleLabel(value)}
-            color={getRoleColor(value)}
-            size="small"
-          />
-        );
-      case 'date':
-        return new Date(value).toLocaleDateString();
-      default:
-        return value;
-    }
-  };
-
-  return (
-    <TableRow hover>
-      {columns.map((column) => (
-        <TableCell key={column.id} align={column.align || 'left'}>
-          {column.id === 'actions' ? (
-            typeof row[column.id] === 'object' ? (
-              row[column.id]
-            ) : (
-              <IconButton onClick={handleOpenMenu}>
-                <Iconify icon="eva:more-vertical-fill" />
-              </IconButton>
-            )
-          ) : (
-            renderCell(column, row[column.id])
-          )}
-        </TableCell>
-      ))}
-
-      <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={handleCloseMenu}
-        anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        <MenuItem onClick={() => { onViewRow(); handleCloseMenu(); }}>
-          <ListItemIcon>
-            <Iconify icon="eva:eye-fill" />
-          </ListItemIcon>
-          <ListItemText>Voir</ListItemText>
-        </MenuItem>
-
-        {canUpdateUser(row.role) && (
-          <MenuItem onClick={() => { onEditRow(); handleCloseMenu(); }}>
-            <ListItemIcon>
-              <Iconify icon="eva:edit-fill" />
-            </ListItemIcon>
-            <ListItemText>Modifier</ListItemText>
-          </MenuItem>
-        )}
-
-        {canChangeUserRole(row.role) && (
-          <>
-            <Divider sx={{ borderStyle: 'dashed' }} />
-            {getPromotableRoles(row.role).map((role) => (
-              <MenuItem 
-                key={role} 
-                onClick={() => { onUpdateRole(role); handleCloseMenu(); }}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {paginatedData.map((row, index) => (
+              <TableRow 
+                hover 
+                role="checkbox" 
+                tabIndex={-1} 
+                key={row.id || index}
+                sx={{
+                  '&:nth-of-type(odd)': {
+                    backgroundColor: 'grey.50',
+                  },
+                  '&:hover': {
+                    backgroundColor: 'primary.light',
+                    '& .MuiTableCell-root': {
+                      color: 'primary.contrastText',
+                    },
+                  },
+                  transition: 'all 0.2s ease-in-out',
+                }}
               >
-                <ListItemIcon>
-                  <Iconify icon={role === ROLES.ETUDIANT ? "eva:person-fill" : "eva:shield-fill"} />
-                </ListItemIcon>
-                <ListItemText>
-                  {role === ROLES.SUPER_ADMIN && "Promouvoir Super Admin"}
-                  {role === ROLES.ADMIN && "Promouvoir Admin"}
-                  {role === ROLES.PROFESSEUR && "Promouvoir Professeur"}
-                  {role === ROLES.ETUDIANT && "Rétrograder Étudiant"}
-                </ListItemText>
-              </MenuItem>
+                {columns.map((column) => {
+                  const value = row[column.id];
+                  return (
+                    <TableCell 
+                      key={column.id} 
+                      align={column.align || 'left'}
+                      sx={{
+                        borderBottom: '1px solid',
+                        borderColor: 'grey.200',
+                        py: 1.5,
+                      }}
+                    >
+                      {column.id === 'actions' && typeof value === 'object' ? (
+                        value
+                      ) : (
+                        value
+                      )}
+                    </TableCell>
+                  );
+                })}
+              </TableRow>
             ))}
-          </>
-        )}
-
-        {canDeleteUser(row.role) && (
-          <>
-            <Divider sx={{ borderStyle: 'dashed' }} />
-            <MenuItem onClick={() => { onDeleteRow(); handleCloseMenu(); }} sx={{ color: 'error.main' }}>
-              <ListItemIcon>
-                <Iconify icon="eva:trash-2-fill" sx={{ color: 'error.main' }} />
-              </ListItemIcon>
-              <ListItemText>Supprimer</ListItemText>
-            </MenuItem>
-          </>
-        )}
-      </Menu>
-    </TableRow>
+          </TableBody>
+        </Table>
+      </TableContainer>
+      <TablePagination
+        rowsPerPageOptions={[10, 25, 100]}
+        component="div"
+        count={data.length}
+        rowsPerPage={rowsPerPage}
+        page={page}
+        onPageChange={handleChangePage}
+        onRowsPerPageChange={handleChangeRowsPerPage}
+        labelRowsPerPage="Lignes par page:"
+        labelDisplayedRows={({ from, to, count }) =>
+          `${from}-${to} sur ${count !== -1 ? count : `plus de ${to}`}`
+        }
+        sx={{
+          backgroundColor: 'grey.100',
+          borderTop: '1px solid',
+          borderColor: 'grey.300',
+        }}
+      />
+    </Paper>
   );
-}
-
-DataTableRow.propTypes = {
-  row: PropTypes.object,
-  columns: PropTypes.array,
-  selected: PropTypes.bool,
-  onSelectRow: PropTypes.func,
-  onEditRow: PropTypes.func,
-  onViewRow: PropTypes.func,
-  onUpdateRole: PropTypes.func,
-  onDeleteRow: PropTypes.func,
-}; 
+} 

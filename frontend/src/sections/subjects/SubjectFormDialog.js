@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -22,7 +22,7 @@ const schema = yup.object().shape({
 });
 
 export default function SubjectFormDialog({ open, onClose, subject, onSuccess }) {
-  const { createSubject, updateSubject, loading, error } = useSubjects();
+  const { createSubject, updateSubject, error } = useSubjects();
   const [submitError, setSubmitError] = useState(null);
 
   const {

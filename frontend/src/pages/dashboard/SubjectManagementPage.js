@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   Container,
   Card,
@@ -8,7 +8,6 @@ import {
   IconButton,
   Tooltip,
   Alert,
-  Box,
   TextField,
   InputAdornment,
 } from '@mui/material';
@@ -17,13 +16,13 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+
 import { useSubjects } from '../../hooks/useSubjects';
 import { usePermissions } from '../../hooks/usePermissions';
-import { useContext } from 'react';
+
 import { AuthContext } from '../../auth/JwtContext';
-import DataTable from '../../components/data-table/DataTable';
-import ConfirmDialog from '../../components/confirm-dialog/ConfirmDialog';
+import { DataTable } from '../../components/data-table';
+import { ConfirmDialog } from '../../components/confirm-dialog';
 import SubjectFormDialog from '../../sections/subjects/SubjectFormDialog';
 import Iconify from '../../components/iconify';
 
@@ -35,12 +34,11 @@ export default function SubjectManagementPage() {
     { id: 'actions', label: 'Actions', align: 'center', width: 120 },
   ];
   
-  const navigate = useNavigate();
+
   const { user } = useContext(AuthContext);
   const { canManageSubjects } = usePermissions();
   const {
     subjects,
-    loading,
     error,
     fetchSubjects,
     deleteSubject,
@@ -53,10 +51,8 @@ export default function SubjectManagementPage() {
   const [filterName, setFilterName] = useState('');
 
   useEffect(() => {
-    console.log('SubjectManagementPage - User:', user);
-    console.log('SubjectManagementPage - canManageSubjects:', canManageSubjects);
     fetchSubjects();
-  }, [fetchSubjects, user, canManageSubjects]);
+  }, [fetchSubjects]);
 
   // Vérification de sécurité
   if (!user) {

@@ -27,6 +27,7 @@ export const PATH_DASHBOARD = {
   userManagement: path(ROOTS_DASHBOARD, '/user-management'),
   roomManagement: path(ROOTS_DASHBOARD, '/room-management'),
   subjectManagement: path(ROOTS_DASHBOARD, '/subject-management'),
+  courseManagement: path(ROOTS_DASHBOARD, '/course-management'),
   profile: path(ROOTS_DASHBOARD, '/profile'),
   calendar: path(ROOTS_DASHBOARD, '/calendar'),
   banking: path(ROOTS_DASHBOARD, '/banking'),

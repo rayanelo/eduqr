@@ -25,6 +25,7 @@ export { default as PageSix } from '../pages/PageSix';
 export { default as UserManagementPage } from '../pages/dashboard/UserManagementPage';
 export { default as RoomManagementPage } from '../pages/dashboard/RoomManagementPage';
 export { default as SubjectManagementPage } from '../pages/dashboard/SubjectManagementPage';
+export { default as CourseManagementPage } from '../pages/dashboard/CourseManagementPage';
 export { default as ProfilePage } from '../pages/dashboard/ProfilePage';
 export { default as CalendarPage } from '../pages/dashboard/CalendarPage';
 

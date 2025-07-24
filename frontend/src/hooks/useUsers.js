@@ -1,138 +1,113 @@
-import { useState, useEffect, useCallback } from 'react';
-import { userAPI } from '../utils/api';
-
-// ----------------------------------------------------------------------
+import { useState, useCallback } from 'react';
+import apiClient from '../utils/api';
 
 export const useUsers = () => {
   const [users, setUsers] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [selectedUser, setSelectedUser] = useState(null);
 
-  // Charger tous les utilisateurs
-  const loadUsers = useCallback(async () => {
-    setIsLoading(true);
+  // Récupérer tous les utilisateurs
+  const fetchUsers = useCallback(async () => {
+    setLoading(true);
     setError(null);
-    
     try {
-      console.log('Loading users...');
-      const response = await userAPI.getAllUsers();
-      console.log('Users response:', response);
-      setUsers(response.data.users || response.data || []);
-      console.log('Users set:', response.data.users || response.data || []);
+      const response = await apiClient.get('/api/v1/users/all');
+      setUsers(response.data.data || []);
     } catch (err) {
-      console.error('Error loading users:', err);
-      setError(err.response?.data?.message || 'Erreur lors du chargement des utilisateurs');
+      setError(err.response?.data?.error || 'Erreur lors de la récupération des utilisateurs');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
+    }
+  }, []);
+
+  // Récupérer un utilisateur par ID
+  const getUserById = useCallback(async (id) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await apiClient.get(`/api/v1/users/${id}`);
+      return response.data.data;
+    } catch (err) {
+      setError(err.response?.data?.error || 'Erreur lors de la récupération de l\'utilisateur');
+      return null;
+    } finally {
+      setLoading(false);
     }
   }, []);
 
   // Créer un utilisateur
   const createUser = useCallback(async (userData) => {
-    setIsLoading(true);
+    setLoading(true);
     setError(null);
-    
     try {
-      const response = await userAPI.createUser(userData);
-      const newUser = response.data.user || response.data;
-      setUsers(prev => [...prev, newUser]);
-      return newUser;
+      const response = await apiClient.post('/api/v1/users/create', userData);
+      await fetchUsers(); // Rafraîchir la liste
+      return response.data.data;
     } catch (err) {
-      setError(err.response?.data?.message || 'Erreur lors de la création de l\'utilisateur');
+      setError(err.response?.data?.error || 'Erreur lors de la création de l\'utilisateur');
       throw err;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  }, []);
+  }, [fetchUsers]);
 
   // Mettre à jour un utilisateur
   const updateUser = useCallback(async (id, userData) => {
-    setIsLoading(true);
+    setLoading(true);
     setError(null);
-    
     try {
-      const response = await userAPI.updateUser(id, userData);
-      const updatedUser = response.data.user || response.data;
-      setUsers(prev => prev.map(user => user.id === id ? updatedUser : user));
-      return updatedUser;
+      const response = await apiClient.put(`/api/v1/users/${id}`, userData);
+      await fetchUsers(); // Rafraîchir la liste
+      return response.data.data;
     } catch (err) {
-      setError(err.response?.data?.message || 'Erreur lors de la mise à jour de l\'utilisateur');
+      setError(err.response?.data?.error || 'Erreur lors de la mise à jour de l\'utilisateur');
       throw err;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  }, []);
+  }, [fetchUsers]);
 
   // Supprimer un utilisateur
   const deleteUser = useCallback(async (id) => {
-    setIsLoading(true);
+    setLoading(true);
     setError(null);
-    
     try {
-      await userAPI.deleteUser(id);
-      setUsers(prev => prev.filter(user => user.id !== id));
+      await apiClient.delete(`/api/v1/users/${id}`);
+      await fetchUsers(); // Rafraîchir la liste
     } catch (err) {
-      setError(err.response?.data?.message || 'Erreur lors de la suppression de l\'utilisateur');
+      setError(err.response?.data?.error || 'Erreur lors de la suppression de l\'utilisateur');
       throw err;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  }, []);
+  }, [fetchUsers]);
 
   // Mettre à jour le rôle d'un utilisateur
   const updateUserRole = useCallback(async (id, role) => {
-    setIsLoading(true);
+    setLoading(true);
     setError(null);
-    
     try {
-      const response = await userAPI.updateUserRole(id, role);
-      const updatedUser = response.data.user || response.data;
-      setUsers(prev => prev.map(user => user.id === id ? updatedUser : user));
-      return updatedUser;
+      const response = await apiClient.patch(`/api/v1/users/${id}/role`, { role });
+      await fetchUsers(); // Rafraîchir la liste
+      return response.data.data;
     } catch (err) {
-      setError(err.response?.data?.message || 'Erreur lors de la mise à jour du rôle');
+      setError(err.response?.data?.error || 'Erreur lors de la mise à jour du rôle');
       throw err;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  }, []);
-
-  // Obtenir un utilisateur par ID
-  const getUserById = useCallback(async (id) => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const response = await userAPI.getUserById(id);
-      const user = response.data.user || response.data;
-      setSelectedUser(user);
-      return user;
-    } catch (err) {
-      setError(err.response?.data?.message || 'Erreur lors de la récupération de l\'utilisateur');
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  // Charger les utilisateurs au montage
-  useEffect(() => {
-    loadUsers();
-  }, [loadUsers]);
+  }, [fetchUsers]);
 
   return {
     users,
-    selectedUser,
-    isLoading,
+    loading,
     error,
-    loadUsers,
+    setError,
+    fetchUsers,
+    getUserById,
     createUser,
     updateUser,
     deleteUser,
-    updateUserRole,
-    getUserById,
-    setSelectedUser,
-    setError,
+    updateUserRole
   };
 }; 

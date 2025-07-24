@@ -90,6 +90,7 @@ export const usePermissions = () => {
   const canManageUsers = user?.role === ROLES.SUPER_ADMIN || user?.role === ROLES.ADMIN;
   const canManageRooms = user?.role === ROLES.SUPER_ADMIN || user?.role === ROLES.ADMIN;
   const canManageSubjects = user?.role === ROLES.SUPER_ADMIN || user?.role === ROLES.ADMIN;
+  const canManageCourses = user?.role === ROLES.SUPER_ADMIN || user?.role === ROLES.ADMIN;
   const canCreateUser = user?.role === ROLES.SUPER_ADMIN || user?.role === ROLES.ADMIN;
 
   return {
@@ -158,6 +159,6 @@ export const usePermissions = () => {
     canManageUsers,
     canManageRooms,
     canManageSubjects,
-    canCreateUser,
+    canManageCourses,
   };
 }; 
