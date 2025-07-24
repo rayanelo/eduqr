@@ -245,7 +245,7 @@ export function TableNoData({ isNotFound, columns = [], onAddNew, ...other }) {
                   mt: 1,
                 }}
               >
-                Ajouter le premier utilisateur
+                Ajouter le premier élément
               </Button>
             )}
           </Box>

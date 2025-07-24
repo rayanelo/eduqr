@@ -81,7 +81,7 @@ export default function DataTable({
 
   const dataInPage = dataFiltered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
-  const isNotFound = false; // Ne jamais afficher "Aucune donnée" si on a des données
+  const isNotFound = dataFiltered.length === 0;
 
 
 
@@ -247,9 +247,13 @@ function DataTableRow({
       {columns.map((column) => (
         <TableCell key={column.id} align={column.align || 'left'}>
           {column.id === 'actions' ? (
-            <IconButton onClick={handleOpenMenu}>
-              <Iconify icon="eva:more-vertical-fill" />
-            </IconButton>
+            typeof row[column.id] === 'object' ? (
+              row[column.id]
+            ) : (
+              <IconButton onClick={handleOpenMenu}>
+                <Iconify icon="eva:more-vertical-fill" />
+              </IconButton>
+            )
           ) : (
             renderCell(column, row[column.id])
           )}

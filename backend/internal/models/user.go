@@ -81,12 +81,12 @@ func CanViewRole(viewerRole, targetRole string) bool {
 func GetViewableFields(viewerRole, targetRole string) []string {
 	// Super Admin can see all fields
 	if viewerRole == RoleSuperAdmin {
-		return []string{"id", "email", "first_name", "last_name", "phone", "address", "avatar", "role", "created_at", "updated_at"}
+		return []string{"id", "email", "contact_email", "first_name", "last_name", "phone", "address", "avatar", "role", "created_at", "updated_at"}
 	}
 
 	// Admin can see all fields for Professeur and Etudiant
 	if viewerRole == RoleAdmin && (targetRole == RoleProfesseur || targetRole == RoleEtudiant) {
-		return []string{"id", "email", "first_name", "last_name", "phone", "address", "avatar", "role", "created_at", "updated_at"}
+		return []string{"id", "email", "contact_email", "first_name", "last_name", "phone", "address", "avatar", "role", "created_at", "updated_at"}
 	}
 
 	// Professeur can see limited fields for other Professeurs and Etudiants
@@ -103,31 +103,33 @@ func GetViewableFields(viewerRole, targetRole string) []string {
 }
 
 type User struct {
-	ID        uint           `json:"id" gorm:"primaryKey"`
-	Email     string         `json:"email" gorm:"uniqueIndex;not null"`
-	Password  string         `json:"-" gorm:"not null"`
-	FirstName string         `json:"first_name" gorm:"not null"`
-	LastName  string         `json:"last_name" gorm:"not null"`
-	Phone     string         `json:"phone"`
-	Address   string         `json:"address"`
-	Avatar    string         `json:"avatar" gorm:"default:'/assets/images/avatars/default-avatar.png'"`
-	Role      string         `json:"role" gorm:"default:'etudiant'"`
-	CreatedAt time.Time      `json:"created_at"`
-	UpdatedAt time.Time      `json:"updated_at"`
-	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
+	ID           uint           `json:"id" gorm:"primaryKey"`
+	Email        string         `json:"email" gorm:"uniqueIndex;not null"`
+	ContactEmail string         `json:"contact_email"`
+	Password     string         `json:"-" gorm:"not null"`
+	FirstName    string         `json:"first_name" gorm:"not null"`
+	LastName     string         `json:"last_name" gorm:"not null"`
+	Phone        string         `json:"phone"`
+	Address      string         `json:"address"`
+	Avatar       string         `json:"avatar" gorm:"default:'/assets/images/avatars/default-avatar.png'"`
+	Role         string         `json:"role" gorm:"default:'etudiant'"`
+	CreatedAt    time.Time      `json:"created_at"`
+	UpdatedAt    time.Time      `json:"updated_at"`
+	DeletedAt    gorm.DeletedAt `json:"-" gorm:"index"`
 }
 
 type UserResponse struct {
-	ID        uint      `json:"id"`
-	Email     string    `json:"email"`
-	FirstName string    `json:"first_name"`
-	LastName  string    `json:"last_name"`
-	Phone     string    `json:"phone"`
-	Address   string    `json:"address"`
-	Avatar    string    `json:"avatar"`
-	Role      string    `json:"role"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID           uint      `json:"id"`
+	Email        string    `json:"email"`
+	ContactEmail string    `json:"contact_email"`
+	FirstName    string    `json:"first_name"`
+	LastName     string    `json:"last_name"`
+	Phone        string    `json:"phone"`
+	Address      string    `json:"address"`
+	Avatar       string    `json:"avatar"`
+	Role         string    `json:"role"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
 }
 
 type LoginRequest struct {
@@ -165,9 +167,127 @@ func (r *CreateUserRequest) Validate() error {
 }
 
 type UpdateUserRequest struct {
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
-	Email     string `json:"email" binding:"email"`
-	Phone     string `json:"phone"`
-	Address   string `json:"address"`
+	FirstName    string `json:"first_name"`
+	LastName     string `json:"last_name"`
+	Email        string `json:"email" binding:"email"`
+	ContactEmail string `json:"contact_email" binding:"email"`
+	Phone        string `json:"phone"`
+	Address      string `json:"address"`
+}
+
+type UpdateProfileRequest struct {
+	ContactEmail string `json:"contact_email" binding:"email"`
+	Phone        string `json:"phone"`
+	Address      string `json:"address"`
+}
+
+type ChangePasswordRequest struct {
+	CurrentPassword string `json:"current_password" binding:"required"`
+	NewPassword     string `json:"new_password" binding:"required,min=8"`
+	ConfirmPassword string `json:"confirm_password" binding:"required,eqfield=NewPassword"`
+}
+
+// PasswordStrength represents the strength of a password
+type PasswordStrength struct {
+	Score    int    `json:"score"`    // 0-4 (0=très faible, 4=très fort)
+	Feedback string `json:"feedback"` // Message d'aide
+	IsValid  bool   `json:"is_valid"` // Si le mot de passe respecte les critères minimum
+	Criteria struct {
+		Length    bool `json:"length"`    // Au moins 8 caractères
+		Uppercase bool `json:"uppercase"` // Au moins 1 majuscule
+		Lowercase bool `json:"lowercase"` // Au moins 1 minuscule
+		Number    bool `json:"number"`    // Au moins 1 chiffre
+		Special   bool `json:"special"`   // Au moins 1 caractère spécial
+	} `json:"criteria"`
+}
+
+// ValidatePasswordStrength validates password strength and returns detailed feedback
+func ValidatePasswordStrength(password string) PasswordStrength {
+	var strength PasswordStrength
+
+	// Critères de base
+	strength.Criteria.Length = len(password) >= 8
+	strength.Criteria.Uppercase = hasUppercase(password)
+	strength.Criteria.Lowercase = hasLowercase(password)
+	strength.Criteria.Number = hasNumber(password)
+	strength.Criteria.Special = hasSpecial(password)
+
+	// Calcul du score
+	score := 0
+	if strength.Criteria.Length {
+		score++
+	}
+	if strength.Criteria.Uppercase {
+		score++
+	}
+	if strength.Criteria.Lowercase {
+		score++
+	}
+	if strength.Criteria.Number {
+		score++
+	}
+	if strength.Criteria.Special {
+		score++
+	}
+
+	strength.Score = score
+	strength.IsValid = score >= 4 // Au moins 4 critères sur 5
+
+	// Messages de feedback
+	switch score {
+	case 0:
+		strength.Feedback = "Mot de passe très faible"
+	case 1:
+		strength.Feedback = "Mot de passe faible"
+	case 2:
+		strength.Feedback = "Mot de passe moyen"
+	case 3:
+		strength.Feedback = "Mot de passe bon"
+	case 4:
+		strength.Feedback = "Mot de passe fort"
+	case 5:
+		strength.Feedback = "Mot de passe très fort"
+	}
+
+	return strength
+}
+
+// Helper functions for password validation
+func hasUppercase(s string) bool {
+	for _, r := range s {
+		if r >= 'A' && r <= 'Z' {
+			return true
+		}
+	}
+	return false
+}
+
+func hasLowercase(s string) bool {
+	for _, r := range s {
+		if r >= 'a' && r <= 'z' {
+			return true
+		}
+	}
+	return false
+}
+
+func hasNumber(s string) bool {
+	for _, r := range s {
+		if r >= '0' && r <= '9' {
+			return true
+		}
+	}
+	return false
+}
+
+func hasSpecial(s string) bool {
+	specialChars := "!@#$%^&*()_+-=[]{}|;:,.<>?"
+	for _, r := range s {
+		for _, special := range specialChars {
+			if r == special {
+				return true
+			}
+		}
+	}
+	return false
 }

@@ -20,11 +20,12 @@ export const PageOne = Loadable(lazy(() => import('../pages/PageOne')));
 export const PageTwo = Loadable(lazy(() => import('../pages/PageTwo')));
 export const PageThree = Loadable(lazy(() => import('../pages/PageThree')));
 export const PageFour = Loadable(lazy(() => import('../pages/PageFour')));
-export const PageFive = Loadable(lazy(() => import('../pages/PageFive')));
-export const PageSix = Loadable(lazy(() => import('../pages/PageSix')));
+export { default as PageFive } from '../pages/PageFive';
+export { default as PageSix } from '../pages/PageSix';
+export { default as UserManagementPage } from '../pages/dashboard/UserManagementPage';
+export { default as RoomManagementPage } from '../pages/dashboard/RoomManagementPage';
+export { default as SubjectManagementPage } from '../pages/dashboard/SubjectManagementPage';
+export { default as ProfilePage } from '../pages/dashboard/ProfilePage';
+export { default as CalendarPage } from '../pages/dashboard/CalendarPage';
 
 export const Page404 = Loadable(lazy(() => import('../pages/Page404')));
-
-export const CalendarPage = Loadable(lazy(() => import('../pages/dashboard/CalendarPage')));
-
-export const UserManagementPage = Loadable(lazy(() => import('../pages/dashboard/UserManagementPage')));

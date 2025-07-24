@@ -50,6 +50,12 @@ const reducer = (state, action) => {
       user: null,
     };
   }
+  if (action.type === 'UPDATE_USER') {
+    return {
+      ...state,
+      user: action.payload.user,
+    };
+  }
 
   return state;
 };
@@ -179,6 +185,16 @@ export function AuthProvider({ children }) {
     });
   }, []);
 
+  // UPDATE USER
+  const updateUser = useCallback((user) => {
+    dispatch({
+      type: 'UPDATE_USER',
+      payload: {
+        user,
+      },
+    });
+  }, []);
+
   const memoizedValue = useMemo(
     () => ({
       isInitialized: state.isInitialized,
@@ -188,8 +204,9 @@ export function AuthProvider({ children }) {
       login,
       register,
       logout,
+      updateUser,
     }),
-    [state.isAuthenticated, state.isInitialized, state.user, login, logout, register]
+    [state.isAuthenticated, state.isInitialized, state.user, login, logout, register, updateUser]
   );
 
   return <AuthContext.Provider value={memoizedValue}>{children}</AuthContext.Provider>;

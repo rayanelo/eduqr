@@ -10,12 +10,13 @@ import { bgBlur } from '../../../utils/cssStyles';
 // components
 import { NavSectionHorizontal } from '../../../components/nav-section';
 //
-import navConfig from './config-navigation';
+import { useNavData } from './config-navigation';
 
 // ----------------------------------------------------------------------
 
 function NavHorizontal() {
   const theme = useTheme();
+  const navData = useNavData();
 
   return (
     <AppBar
@@ -33,7 +34,7 @@ function NavHorizontal() {
           }),
         }}
       >
-        <NavSectionHorizontal data={navConfig} />
+        <NavSectionHorizontal data={navData} />
       </Toolbar>
 
       <Shadow />

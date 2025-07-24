@@ -16,9 +16,22 @@ ConfirmDialog.propTypes = {
   content: PropTypes.string,
   action: PropTypes.node,
   onClose: PropTypes.func,
+  onConfirm: PropTypes.func,
+  confirmText: PropTypes.string,
+  cancelText: PropTypes.string,
 };
 
-export default function ConfirmDialog({ title, content, action, open, onClose, ...other }) {
+export default function ConfirmDialog({ 
+  title, 
+  content, 
+  action, 
+  open, 
+  onClose, 
+  onConfirm,
+  confirmText = 'Confirmer',
+  cancelText = 'Annuler',
+  ...other 
+}) {
   return (
     <Dialog fullWidth maxWidth="xs" open={open} onClose={onClose} {...other}>
       <DialogTitle sx={{ pb: 2 }}>
@@ -33,8 +46,13 @@ export default function ConfirmDialog({ title, content, action, open, onClose, .
 
       <DialogActions>
         {action}
+        {onConfirm && (
+          <Button variant="contained" color="primary" onClick={onConfirm}>
+            {confirmText}
+          </Button>
+        )}
         <Button variant="outlined" color="inherit" onClick={onClose}>
-          Annuler
+          {cancelText}
         </Button>
       </DialogActions>
     </Dialog>

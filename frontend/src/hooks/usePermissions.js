@@ -1,4 +1,5 @@
-import { useAuthContext } from '../auth/JwtContext';
+import { useContext } from 'react';
+import { AuthContext } from '../auth/JwtContext';
 
 // Rôles disponibles
 export const ROLES = {
@@ -83,8 +84,13 @@ const getViewableFields = (viewerRole, targetRole) => {
 };
 
 export const usePermissions = () => {
-  const { user } = useAuthContext();
+  const { user } = useContext(AuthContext);
   const currentUserRole = user?.role || ROLES.ETUDIANT;
+
+  const canManageUsers = user?.role === ROLES.SUPER_ADMIN || user?.role === ROLES.ADMIN;
+  const canManageRooms = user?.role === ROLES.SUPER_ADMIN || user?.role === ROLES.ADMIN;
+  const canManageSubjects = user?.role === ROLES.SUPER_ADMIN || user?.role === ROLES.ADMIN;
+  const canCreateUser = user?.role === ROLES.SUPER_ADMIN || user?.role === ROLES.ADMIN;
 
   return {
     // Vérifier si l'utilisateur peut gérer un rôle spécifique
@@ -147,5 +153,11 @@ export const usePermissions = () => {
       }
       return [];
     },
+
+    // Permissions simplifiées
+    canManageUsers,
+    canManageRooms,
+    canManageSubjects,
+    canCreateUser,
   };
 }; 

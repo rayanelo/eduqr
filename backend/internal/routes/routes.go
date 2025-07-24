@@ -10,20 +10,26 @@ import (
 )
 
 type Router struct {
-	userController  *controllers.UserController
-	eventController *controllers.EventController
-	authMiddleware  *middlewares.AuthMiddleware
+	userController    *controllers.UserController
+	eventController   *controllers.EventController
+	roomController    *controllers.RoomController
+	subjectController *controllers.SubjectController
+	authMiddleware    *middlewares.AuthMiddleware
 }
 
 func NewRouter(
 	userController *controllers.UserController,
 	eventController *controllers.EventController,
+	roomController *controllers.RoomController,
+	subjectController *controllers.SubjectController,
 	authMiddleware *middlewares.AuthMiddleware,
 ) *Router {
 	return &Router{
-		userController:  userController,
-		eventController: eventController,
-		authMiddleware:  authMiddleware,
+		userController:    userController,
+		eventController:   eventController,
+		roomController:    roomController,
+		subjectController: subjectController,
+		authMiddleware:    authMiddleware,
 	}
 }
 
@@ -65,6 +71,8 @@ func (r *Router) SetupRoutes() *gin.Engine {
 			// Profile routes (users can manage their own profile)
 			users.GET("/profile", r.userController.GetProfile)
 			users.PUT("/profile", r.userController.UpdateProfile)
+			users.PUT("/profile/password", r.userController.ChangePassword)
+			users.POST("/profile/validate-password", r.userController.ValidatePassword)
 
 			// User management routes with role-based permissions
 			users.GET("/all", r.userController.GetAllUsers)    // All authenticated users can view based on their role
@@ -87,6 +95,31 @@ func (r *Router) SetupRoutes() *gin.Engine {
 			events.GET("/:id", r.eventController.GetEventByID)
 			events.PUT("/:id", r.eventController.UpdateEvent)
 			events.DELETE("/:id", r.eventController.DeleteEvent)
+		}
+
+		// Room routes (admin authentication required)
+		rooms := v1.Group("/admin/rooms")
+		rooms.Use(r.authMiddleware.AuthMiddleware())
+		rooms.Use(r.authMiddleware.RoleMiddleware("admin"))
+		{
+			rooms.GET("", r.roomController.GetAllRooms)
+			rooms.GET("/modular", r.roomController.GetModularRooms)
+			rooms.POST("", r.roomController.CreateRoom)
+			rooms.GET("/:id", r.roomController.GetRoomByID)
+			rooms.PUT("/:id", r.roomController.UpdateRoom)
+			rooms.DELETE("/:id", r.roomController.DeleteRoom)
+		}
+
+		// Subject routes (admin authentication required)
+		subjects := v1.Group("/admin/subjects")
+		subjects.Use(r.authMiddleware.AuthMiddleware())
+		subjects.Use(r.authMiddleware.RoleMiddleware("admin"))
+		{
+			subjects.GET("", r.subjectController.GetAllSubjects)
+			subjects.POST("", r.subjectController.CreateSubject)
+			subjects.GET("/:id", r.subjectController.GetSubjectByID)
+			subjects.PUT("/:id", r.subjectController.UpdateSubject)
+			subjects.DELETE("/:id", r.subjectController.DeleteSubject)
 		}
 	}
 

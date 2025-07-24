@@ -1,32 +1,91 @@
-// routes
-import { PATH_DASHBOARD } from '../../../routes/paths';
+import { useMemo } from 'react';
+
+import { useLocales } from '../../../locales';
+
+import { usePermissions } from '../../../hooks/usePermissions';
+
 // components
 import SvgColor from '../../../components/svg-color';
 
 // ----------------------------------------------------------------------
 
-const icon = (name) => (
-  <SvgColor src={`/assets/icons/navbar/${name}.svg`} sx={{ width: 1, height: 1 }} />
-);
+export function useNavData() {
+  const { translate } = useLocales();
+  const { canManageUsers, canManageRooms, canManageSubjects } = usePermissions();
 
-const ICONS = {
-  user: icon('ic_user'),
-  ecommerce: icon('ic_ecommerce'),
-  analytics: icon('ic_analytics'),
-  dashboard: icon('ic_dashboard'),
-  calendar: icon('ic_calendar'),
-};
+  const data = useMemo(
+    () => [
+      // GENERAL
+      // ----------------------------------------------------------------------
+      {
+        subheader: 'general',
+        items: [
+          {
+            title: translate('profile'),
+            path: '/dashboard/profile',
+            icon: <SvgColor src="/assets/icons/navbar/ic_user.svg" />,
+          },
+          {
+            title: translate('calendar'),
+            path: '/dashboard/calendar',
+            icon: <SvgColor src="/assets/icons/navbar/ic_calendar.svg" />,
+          },
+        ],
+      },
 
+      // MANAGEMENT
+      // ----------------------------------------------------------------------
+      {
+        subheader: 'management',
+        items: [
+          ...(canManageUsers
+            ? [
+                {
+                  title: translate('user'),
+                  path: '/dashboard/user-management',
+                  icon: <SvgColor src="/assets/icons/navbar/ic_user.svg" />,
+                },
+              ]
+            : []),
+          ...(canManageRooms
+            ? [
+                {
+                  title: 'Salles',
+                  path: '/dashboard/room-management',
+                  icon: <SvgColor src="/assets/icons/navbar/ic_building.svg" />,
+                },
+              ]
+            : []),
+          ...(canManageSubjects
+            ? [
+                {
+                  title: 'Matières',
+                  path: '/dashboard/subject-management',
+                  icon: <SvgColor src="/assets/icons/navbar/ic_book.svg" />,
+                },
+              ]
+            : []),
+        ],
+      },
+    ],
+    [translate, canManageUsers, canManageRooms, canManageSubjects]
+  );
+
+  return data;
+}
+
+// Export par défaut pour compatibilité
 const navConfig = [
   // GENERAL
   // ----------------------------------------------------------------------
   {
     subheader: 'general v4.2.0',
     items: [
-      { title: 'One', path: PATH_DASHBOARD.one, icon: ICONS.dashboard },
-      { title: 'Two', path: PATH_DASHBOARD.two, icon: ICONS.ecommerce },
-      { title: 'Three', path: PATH_DASHBOARD.three, icon: ICONS.analytics },
-      { title: 'Calendar', path: PATH_DASHBOARD.calendar, icon: ICONS.calendar },
+      { title: 'One', path: '/dashboard/one', icon: <SvgColor src="/assets/icons/navbar/ic_dashboard.svg" /> },
+      { title: 'Two', path: '/dashboard/two', icon: <SvgColor src="/assets/icons/navbar/ic_ecommerce.svg" /> },
+      { title: 'Three', path: '/dashboard/three', icon: <SvgColor src="/assets/icons/navbar/ic_analytics.svg" /> },
+      { title: 'Calendar', path: '/dashboard/calendar', icon: <SvgColor src="/assets/icons/navbar/ic_calendar.svg" /> },
+      { title: 'Mon profil', path: '/dashboard/profile', icon: <SvgColor src="/assets/icons/navbar/ic_user.svg" /> },
     ],
   },
 
@@ -37,13 +96,13 @@ const navConfig = [
     items: [
       {
         title: 'user',
-        path: PATH_DASHBOARD.user.root,
-        icon: ICONS.user,
+        path: '/dashboard/user',
+        icon: <SvgColor src="/assets/icons/navbar/ic_user.svg" />,
         children: [
-          { title: 'Four', path: PATH_DASHBOARD.user.four },
-          { title: 'Five', path: PATH_DASHBOARD.user.five },
-          { title: 'Six', path: PATH_DASHBOARD.user.six },
-          { title: 'Gestion des utilisateurs', path: PATH_DASHBOARD.user.management },
+          { title: 'Four', path: '/dashboard/user/four' },
+          { title: 'Five', path: '/dashboard/user/five' },
+          { title: 'Six', path: '/dashboard/user/six' },
+          { title: 'Gestion des utilisateurs', path: '/dashboard/user-management' },
         ],
       },
     ],

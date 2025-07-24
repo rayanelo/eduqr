@@ -98,6 +98,9 @@ func (s *UserService) UpdateUser(id uint, req *models.UpdateUserRequest) (*model
 	if req.Email != "" {
 		user.Email = req.Email
 	}
+	if req.ContactEmail != "" {
+		user.ContactEmail = req.ContactEmail
+	}
 	if req.Phone != "" {
 		user.Phone = req.Phone
 	}
@@ -182,17 +185,64 @@ func (s *UserService) UpdateUserRole(id uint, role string) (*models.UserResponse
 	return s.toUserResponse(user), nil
 }
 
+func (s *UserService) UpdateProfile(id uint, req *models.UpdateProfileRequest) (*models.UserResponse, error) {
+	user, err := s.userRepo.FindByID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	if req.ContactEmail != "" {
+		user.ContactEmail = req.ContactEmail
+	}
+	if req.Phone != "" {
+		user.Phone = req.Phone
+	}
+	if req.Address != "" {
+		user.Address = req.Address
+	}
+
+	if err := s.userRepo.Update(user); err != nil {
+		return nil, err
+	}
+
+	return s.toUserResponse(user), nil
+}
+
+func (s *UserService) ChangePassword(id uint, req *models.ChangePasswordRequest) error {
+	user, err := s.userRepo.FindByID(id)
+	if err != nil {
+		return err
+	}
+
+	// Verify current password
+	if !utils.CheckPassword(req.CurrentPassword, user.Password) {
+		return errors.New("mot de passe actuel incorrect")
+	}
+
+	// Hash new password
+	hashedPassword, err := utils.HashPassword(req.NewPassword)
+	if err != nil {
+		return err
+	}
+
+	// Update password
+	user.Password = hashedPassword
+
+	return s.userRepo.Update(user)
+}
+
 func (s *UserService) toUserResponse(user *models.User) *models.UserResponse {
 	return &models.UserResponse{
-		ID:        user.ID,
-		Email:     user.Email,
-		FirstName: user.FirstName,
-		LastName:  user.LastName,
-		Phone:     user.Phone,
-		Address:   user.Address,
-		Avatar:    user.Avatar,
-		Role:      user.Role,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
+		ID:           user.ID,
+		Email:        user.Email,
+		ContactEmail: user.ContactEmail,
+		FirstName:    user.FirstName,
+		LastName:     user.LastName,
+		Phone:        user.Phone,
+		Address:      user.Address,
+		Avatar:       user.Avatar,
+		Role:         user.Role,
+		CreatedAt:    user.CreatedAt,
+		UpdatedAt:    user.UpdatedAt,
 	}
 }

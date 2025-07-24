@@ -1,77 +1,57 @@
 import { Navigate, useRoutes } from 'react-router-dom';
-// auth
-import AuthGuard from '../auth/AuthGuard';
-import GuestGuard from '../auth/GuestGuard';
+
 // layouts
-import CompactLayout from '../layouts/compact';
 import DashboardLayout from '../layouts/dashboard';
-// config
-import { PATH_AFTER_LOGIN } from '../config-global';
-//
-import {
-  Page404,
-  PageOne,
-  PageTwo,
-  PageSix,
-  PageFour,
-  PageFive,
-  LoginPage,
-  RegisterPage,
-  PageThree,
-  CalendarPage,
-  UserManagementPage,
-} from './elements';
+import CompactLayout from '../layouts/compact';
+
+// guards
+import GuestGuard from '../auth/GuestGuard';
+import AuthGuard from '../auth/AuthGuard';
+
+// import pages
+import LoginPage from '../pages/LoginPage';
+import Page404 from '../pages/Page404';
+import PageFive from '../pages/PageFive';
+import PageSix from '../pages/PageSix';
+import UserManagementPage from '../pages/dashboard/UserManagementPage';
+import RoomManagementPage from '../pages/dashboard/RoomManagementPage';
+import SubjectManagementPage from '../pages/dashboard/SubjectManagementPage';
+import ProfilePage from '../pages/dashboard/ProfilePage';
+import CalendarPage from '../pages/dashboard/CalendarPage';
 
 // ----------------------------------------------------------------------
 
 export default function Router() {
   return useRoutes([
     {
-      path: '/',
-      children: [
-        { element: <Navigate to={PATH_AFTER_LOGIN} replace />, index: true },
-        {
-          path: 'login',
-          element: (
-            <GuestGuard>
-              <LoginPage />
-            </GuestGuard>
-          ),
-        },
-        {
-          path: 'register',
-          element: (
-            <GuestGuard>
-              <RegisterPage />
-            </GuestGuard>
-          ),
-        },
-      ],
-    },
-    {
-      path: '/dashboard',
+      path: 'dashboard',
       element: (
         <AuthGuard>
           <DashboardLayout />
         </AuthGuard>
       ),
       children: [
-        { element: <Navigate to={PATH_AFTER_LOGIN} replace />, index: true },
-        { path: 'one', element: <PageOne /> },
-        { path: 'two', element: <PageTwo /> },
-        { path: 'three', element: <PageThree /> },
+        { element: <Navigate to="/dashboard/user-management" replace />, index: true },
+        { path: 'user-management', element: <UserManagementPage /> },
+        { path: 'room-management', element: <RoomManagementPage /> },
+        { path: 'subject-management', element: <SubjectManagementPage /> },
+        { path: 'profile', element: <ProfilePage /> },
         { path: 'calendar', element: <CalendarPage /> },
-        {
-          path: 'user',
-          children: [
-            { element: <Navigate to="/dashboard/user/four" replace />, index: true },
-            { path: 'four', element: <PageFour /> },
-            { path: 'five', element: <PageFive /> },
-            { path: 'six', element: <PageSix /> },
-            { path: 'management', element: <UserManagementPage /> },
-          ],
-        },
+        { path: 'five', element: <PageFive /> },
+        { path: 'six', element: <PageSix /> },
       ],
+    },
+    {
+      path: '/',
+      element: <Navigate to="/login" replace />,
+    },
+    {
+      path: 'login',
+      element: (
+        <GuestGuard>
+          <LoginPage />
+        </GuestGuard>
+      ),
     },
     {
       element: <CompactLayout />,

@@ -9,7 +9,6 @@ import {
   TextField,
   InputAdornment,
   Grid,
-  Box,
 } from '@mui/material';
 // hooks
 import { useUsers } from '../../hooks/useUsers';
@@ -57,7 +56,7 @@ const getTableColumns = (permissions) => {
 export default function UserManagementPage() {
   const { themeStretch } = useSettingsContext();
   const { enqueueSnackbar } = useSnackbar();
-  const { canCreateUser, getCreatableRoles, canSeeActions } = usePermissions();
+  const { getCreatableRoles, canSeeActions } = usePermissions();
 
   const {
     users,

@@ -113,16 +113,15 @@ func (c *UserController) GetProfile(ctx *gin.Context) {
 }
 
 // @Summary Update user profile
-// @Description Update current user profile
+// @Description Update current user profile (contact email, phone, address only)
 // @Tags users
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param user body models.UpdateUserRequest true "User update data"
+// @Param profile body models.UpdateProfileRequest true "Profile update data"
 // @Success 200 {object} models.UserResponse
 // @Failure 400 {object} map[string]interface{}
 // @Failure 401 {object} map[string]interface{}
-// @Failure 404 {object} map[string]interface{}
 // @Router /users/profile [put]
 func (c *UserController) UpdateProfile(ctx *gin.Context) {
 	userID, exists := ctx.Get("user_id")
@@ -131,13 +130,13 @@ func (c *UserController) UpdateProfile(ctx *gin.Context) {
 		return
 	}
 
-	var req models.UpdateUserRequest
+	var req models.UpdateProfileRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	user, err := c.userService.UpdateUser(userID.(uint), &req)
+	user, err := c.userService.UpdateProfile(userID.(uint), &req)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -237,6 +236,8 @@ func filterUserFields(user models.UserResponse, viewableFields []string) models.
 			filteredUser.ID = user.ID
 		case "email":
 			filteredUser.Email = user.Email
+		case "contact_email":
+			filteredUser.ContactEmail = user.ContactEmail
 		case "first_name":
 			filteredUser.FirstName = user.FirstName
 		case "last_name":
@@ -482,4 +483,69 @@ func (c *UserController) UpdateUserRole(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, user)
+}
+
+// @Summary Change password
+// @Description Change user password with validation
+// @Tags users
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param password body models.ChangePasswordRequest true "Password change data"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Router /users/profile/password [put]
+func (c *UserController) ChangePassword(ctx *gin.Context) {
+	userID, exists := ctx.Get("user_id")
+	if !exists {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	var req models.ChangePasswordRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Validate password strength
+	strength := models.ValidatePasswordStrength(req.NewPassword)
+	if !strength.IsValid {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error":    "Le mot de passe ne respecte pas les critères de sécurité",
+			"strength": strength,
+		})
+		return
+	}
+
+	err := c.userService.ChangePassword(userID.(uint), &req)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "Mot de passe modifié avec succès"})
+}
+
+// @Summary Validate password strength
+// @Description Validate password strength and return feedback
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param password body map[string]string true "Password to validate"
+// @Success 200 {object} models.PasswordStrength
+// @Router /users/profile/validate-password [post]
+func (c *UserController) ValidatePassword(ctx *gin.Context) {
+	var req struct {
+		Password string `json:"password" binding:"required"`
+	}
+
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	strength := models.ValidatePasswordStrength(req.Password)
+	ctx.JSON(http.StatusOK, strength)
 }
