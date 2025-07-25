@@ -12,7 +12,7 @@ export const useUsers = () => {
     setError(null);
     try {
       const response = await apiClient.get('/api/v1/users/all');
-      setUsers(response.data.data || []);
+      setUsers(response.data.users || []);
     } catch (err) {
       setError(err.response?.data?.error || 'Erreur lors de la récupération des utilisateurs');
     } finally {
@@ -26,7 +26,7 @@ export const useUsers = () => {
     setError(null);
     try {
       const response = await apiClient.get(`/api/v1/users/${id}`);
-      return response.data.data;
+      return response.data.user || response.data;
     } catch (err) {
       setError(err.response?.data?.error || 'Erreur lors de la récupération de l\'utilisateur');
       return null;
@@ -42,7 +42,7 @@ export const useUsers = () => {
     try {
       const response = await apiClient.post('/api/v1/users/create', userData);
       await fetchUsers(); // Rafraîchir la liste
-      return response.data.data;
+      return response.data.user || response.data;
     } catch (err) {
       setError(err.response?.data?.error || 'Erreur lors de la création de l\'utilisateur');
       throw err;
@@ -58,7 +58,7 @@ export const useUsers = () => {
     try {
       const response = await apiClient.put(`/api/v1/users/${id}`, userData);
       await fetchUsers(); // Rafraîchir la liste
-      return response.data.data;
+      return response.data.user || response.data;
     } catch (err) {
       setError(err.response?.data?.error || 'Erreur lors de la mise à jour de l\'utilisateur');
       throw err;
@@ -89,7 +89,7 @@ export const useUsers = () => {
     try {
       const response = await apiClient.patch(`/api/v1/users/${id}/role`, { role });
       await fetchUsers(); // Rafraîchir la liste
-      return response.data.data;
+      return response.data.user || response.data;
     } catch (err) {
       setError(err.response?.data?.error || 'Erreur lors de la mise à jour du rôle');
       throw err;

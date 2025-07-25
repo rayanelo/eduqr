@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useTheme } from '@mui/material/styles';
 import {
   Table,
   TableBody,
@@ -12,10 +13,17 @@ import {
 } from '@mui/material';
 
 export function DataTable({ data, columns, onAddNew, isFiltered = false }) {
+  const theme = useTheme();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [orderBy, setOrderBy] = useState('');
   const [order, setOrder] = useState('asc');
+  const [themeKey, setThemeKey] = useState(0);
+
+  // Force re-render when theme changes
+  useEffect(() => {
+    setThemeKey(prev => prev + 1);
+  }, [theme.palette.primary.main]);
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -59,7 +67,16 @@ export function DataTable({ data, columns, onAddNew, isFiltered = false }) {
   };
 
   return (
-    <Paper sx={{ width: '100%', overflow: 'hidden', boxShadow: 2 }}>
+    <Paper 
+      key={themeKey}
+      sx={{ 
+        width: '100%', 
+        overflow: 'hidden', 
+        boxShadow: theme.customShadows?.primary || theme.shadows[2],
+        borderRadius: 2,
+        border: `1px solid ${theme.palette.divider}`
+      }}
+    >
       <TableContainer sx={{ maxHeight: 440 }}>
         <Table stickyHeader>
           <TableHead>
@@ -68,23 +85,18 @@ export function DataTable({ data, columns, onAddNew, isFiltered = false }) {
                 <TableCell
                   key={column.id}
                   align={column.align || 'left'}
-                  style={{ minWidth: column.minWidth, width: column.width }}
+                  style={{ 
+                    minWidth: column.minWidth, 
+                    width: column.width,
+                  }}
                   sortDirection={orderBy === column.id ? order : false}
                   sx={{
-                    backgroundColor: 'primary.main',
-                    color: 'primary.contrastText',
+                    backgroundColor: `${theme.palette.primary.main} !important`,
+                    color: `${theme.palette.primary.contrastText} !important`,
                     fontWeight: 'bold',
-                    '& .MuiTableSortLabel-root': {
-                      color: 'primary.contrastText',
-                      '&:hover': {
-                        color: 'primary.light',
-                      },
-                      '&.Mui-active': {
-                        color: 'primary.light',
-                        '& .MuiTableSortLabel-icon': {
-                          color: 'primary.light',
-                        },
-                      },
+                    fontSize: '0.875rem',
+                    '&:hover': {
+                      backgroundColor: `${theme.palette.primary.dark} !important`,
                     },
                   }}
                 >
@@ -93,11 +105,32 @@ export function DataTable({ data, columns, onAddNew, isFiltered = false }) {
                       active={orderBy === column.id}
                       direction={orderBy === column.id ? order : 'asc'}
                       onClick={createSortHandler(column.id)}
+                      sx={{
+                        color: `${theme.palette.primary.contrastText} !important`,
+                        '&:hover': {
+                          color: `${theme.palette.primary.contrastText} !important`,
+                          opacity: 0.8,
+                        },
+                        '&.Mui-active': {
+                          color: `${theme.palette.primary.contrastText} !important`,
+                          '& .MuiTableSortLabel-icon': {
+                            color: `${theme.palette.primary.contrastText} !important`,
+                          },
+                        },
+                        '& .MuiTableSortLabel-icon': {
+                          color: `${theme.palette.primary.contrastText} !important`,
+                        },
+                      }}
                     >
                       {column.label}
                     </TableSortLabel>
                   ) : (
-                    column.label
+                    <span style={{ 
+                      color: `${theme.palette.primary.contrastText} !important`,
+                      fontWeight: 'bold',
+                    }}>
+                      {column.label}
+                    </span>
                   )}
                 </TableCell>
               ))}
@@ -112,12 +145,16 @@ export function DataTable({ data, columns, onAddNew, isFiltered = false }) {
                 key={row.id || index}
                 sx={{
                   '&:nth-of-type(odd)': {
-                    backgroundColor: 'grey.50',
+                    backgroundColor: theme.palette.mode === 'light' 
+                      ? theme.palette.grey[50] 
+                      : theme.palette.grey[800],
                   },
                   '&:hover': {
-                    backgroundColor: 'primary.light',
+                    backgroundColor: theme.palette.mode === 'light' 
+                      ? theme.palette.grey[100] 
+                      : theme.palette.grey[700],
                     '& .MuiTableCell-root': {
-                      color: 'primary.contrastText',
+                      color: theme.palette.text.primary,
                     },
                   },
                   transition: 'all 0.2s ease-in-out',
@@ -130,16 +167,12 @@ export function DataTable({ data, columns, onAddNew, isFiltered = false }) {
                       key={column.id} 
                       align={column.align || 'left'}
                       sx={{
-                        borderBottom: '1px solid',
-                        borderColor: 'grey.200',
+                        borderBottom: `1px solid ${theme.palette.divider}`,
                         py: 1.5,
+                        fontSize: '0.875rem',
                       }}
                     >
-                      {column.id === 'actions' && typeof value === 'object' ? (
-                        value
-                      ) : (
-                        value
-                      )}
+                      {column.render ? column.render(value, row) : value}
                     </TableCell>
                   );
                 })}
@@ -161,9 +194,13 @@ export function DataTable({ data, columns, onAddNew, isFiltered = false }) {
           `${from}-${to} sur ${count !== -1 ? count : `plus de ${to}`}`
         }
         sx={{
-          backgroundColor: 'grey.100',
-          borderTop: '1px solid',
-          borderColor: 'grey.300',
+          backgroundColor: theme.palette.mode === 'light' 
+            ? theme.palette.grey[100] 
+            : theme.palette.grey[800],
+          borderTop: `1px solid ${theme.palette.divider}`,
+          '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+            color: theme.palette.text.primary,
+          },
         }}
       />
     </Paper>

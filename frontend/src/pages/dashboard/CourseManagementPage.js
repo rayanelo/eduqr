@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
+import { useTheme } from '@mui/material/styles';
 import {
   Container,
   Typography,
@@ -38,6 +39,8 @@ import RepeatIcon from '@mui/icons-material/Repeat';
 import InfoIcon from '@mui/icons-material/Info';
 
 export default function CourseManagementPage() {
+  const theme = useTheme();
+  
   const TABLE_HEAD = [
     { id: 'name', label: 'Nom du cours', align: 'left', minWidth: 200 },
     { id: 'subject', label: 'Matière', align: 'left', minWidth: 150 },
@@ -160,9 +163,9 @@ export default function CourseManagementPage() {
           variant="body2" 
           sx={{ 
             fontWeight: course.is_recurring_series ? 'bold' : 'medium',
-            color: course.is_recurring_series ? 'primary.main' : 'text.primary',
+            color: course.is_recurring_series ? theme.palette.primary.main : theme.palette.text.primary,
             '&:hover': {
-              color: 'primary.main',
+              color: theme.palette.primary.main,
               textDecoration: 'underline',
               cursor: 'pointer'
             }
@@ -174,7 +177,7 @@ export default function CourseManagementPage() {
           <RepeatIcon 
             fontSize="small" 
             sx={{ 
-              color: 'primary.main',
+              color: theme.palette.primary.main,
               opacity: 0.7
             }} 
           />
@@ -186,34 +189,34 @@ export default function CourseManagementPage() {
         label={course.subject.name} 
         size="small" 
         sx={{ 
-          backgroundColor: 'secondary.light',
-          color: 'secondary.contrastText',
+          backgroundColor: theme.palette.secondary.light,
+          color: theme.palette.secondary.contrastText,
           fontWeight: 'medium',
           fontSize: '0.75rem'
         }}
       />
     ),
     teacher: (
-      <Typography variant="body2" sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
+      <Typography variant="body2" sx={{ color: theme.palette.text.secondary, fontStyle: 'italic' }}>
         {course.teacher.first_name} {course.teacher.last_name}
       </Typography>
     ),
     room: (
-      <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 'medium' }}>
+      <Typography variant="body2" sx={{ color: theme.palette.text.primary, fontWeight: 'medium' }}>
         {course.room.name} - {course.room.building} {course.room.floor}
       </Typography>
     ),
     start_time: course.is_recurring_series ? (
       <Box>
-        <Typography variant="body2" sx={{ fontWeight: 'medium', color: 'primary.main' }}>
+        <Typography variant="body2" sx={{ fontWeight: 'medium', color: theme.palette.primary.main }}>
           {new Date(course.start_time).toLocaleDateString('fr-FR')}
         </Typography>
-        <Typography variant="caption" color="text.secondary">
+        <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
           {formatRecurrenceInfo(course)}
         </Typography>
       </Box>
     ) : (
-      <Typography variant="body2" sx={{ color: 'text.primary' }}>
+      <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
         {new Date(course.start_time).toLocaleString('fr-FR')}
       </Typography>
     ),
@@ -222,8 +225,8 @@ export default function CourseManagementPage() {
         label={`${course.duration} min`} 
         size="small" 
         sx={{ 
-          backgroundColor: course.is_recurring_series ? 'primary.light' : 'grey.100',
-          color: course.is_recurring_series ? 'primary.contrastText' : 'text.primary',
+          backgroundColor: course.is_recurring_series ? theme.palette.primary.light : theme.palette.grey[100],
+          color: course.is_recurring_series ? theme.palette.primary.contrastText : theme.palette.text.primary,
           fontWeight: 'medium'
         }}
       />
@@ -236,8 +239,8 @@ export default function CourseManagementPage() {
           size="small" 
           icon={<RepeatIcon />}
           sx={{ 
-            backgroundColor: 'primary.main',
-            color: 'primary.contrastText',
+            backgroundColor: theme.palette.primary.main,
+            color: theme.palette.primary.contrastText,
             fontWeight: 'bold'
           }}
         />
@@ -247,10 +250,10 @@ export default function CourseManagementPage() {
             size="small"
             sx={{ 
               p: 0.5,
-              color: 'info.main',
+              color: theme.palette.info.main,
               '&:hover': {
-                backgroundColor: 'info.light',
-                color: 'info.contrastText'
+                backgroundColor: theme.palette.info.light,
+                color: theme.palette.info.contrastText
               }
             }}
           >
@@ -263,8 +266,8 @@ export default function CourseManagementPage() {
         label="Ponctuel" 
         size="small" 
         sx={{ 
-          backgroundColor: 'success.light',
-          color: 'success.contrastText',
+          backgroundColor: theme.palette.success.light,
+          color: theme.palette.success.contrastText,
           fontWeight: 'medium'
         }}
       />
@@ -278,7 +281,7 @@ export default function CourseManagementPage() {
             size="small"
             sx={{
               '&:hover': {
-                backgroundColor: 'primary.light',
+                backgroundColor: theme.palette.primary.light,
                 transform: 'scale(1.1)'
               },
               transition: 'all 0.2s ease-in-out'
@@ -294,7 +297,7 @@ export default function CourseManagementPage() {
             size="small"
             sx={{
               '&:hover': {
-                backgroundColor: 'error.light',
+                backgroundColor: theme.palette.error.light,
                 transform: 'scale(1.1)'
               },
               transition: 'all 0.2s ease-in-out'

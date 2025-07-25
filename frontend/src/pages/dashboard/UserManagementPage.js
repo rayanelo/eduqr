@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 // @mui
 import {
@@ -9,6 +9,13 @@ import {
   TextField,
   InputAdornment,
   Grid,
+  Alert,
+  Avatar,
+  Chip,
+  IconButton,
+  Tooltip,
+  Box,
+  Typography,
 } from '@mui/material';
 // hooks
 import { useUsers } from '../../hooks/useUsers';
@@ -27,29 +34,165 @@ import UserInfo from '../../components/user-info/UserInfo';
 
 // ----------------------------------------------------------------------
 
-// Colonnes de base du tableau
-const BASE_TABLE_HEAD = [
-  { id: 'avatar', label: 'Avatar', align: 'center', width: 80, type: 'avatar' },
-  { id: 'name', label: 'Nom complet', align: 'left', minWidth: 200 },
-  { id: 'email', label: 'Email', align: 'left', minWidth: 200 },
-  { id: 'phone', label: 'Téléphone', align: 'left', minWidth: 150 },
-  { id: 'address', label: 'Adresse', align: 'left', minWidth: 200 },
-  { id: 'role', label: 'Rôle', align: 'center', width: 120, type: 'role' },
-  { id: 'created_at', label: 'Créé le', align: 'center', width: 120, type: 'date' },
-  { id: 'actions', label: 'Actions', align: 'center', width: 80 },
-];
-
-// Fonction pour obtenir les colonnes selon les permissions
-const getTableColumns = (permissions) => {
-  const columns = [...BASE_TABLE_HEAD];
-  
-  // Si l'utilisateur ne peut pas voir les actions, on retire la colonne actions
-  if (!permissions.canSeeActions) {
-    return columns.filter(col => col.id !== 'actions');
+// Fonction pour formater la date
+const formatDate = (dateString) => {
+  if (!dateString) return '-';
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+  } catch (error) {
+    return '-';
   }
-  
-  return columns;
 };
+
+// Fonction pour obtenir la couleur du rôle
+const getRoleColor = (role) => {
+  const roleColors = {
+    'super_admin': 'error',
+    'admin': 'warning',
+    'professeur': 'info',
+    'etudiant': 'success',
+  };
+  return roleColors[role] || 'default';
+};
+
+// Fonction pour traduire le rôle
+const translateRole = (role) => {
+  const roleTranslations = {
+    'super_admin': 'Super Admin',
+    'admin': 'Admin',
+    'professeur': 'Professeur',
+    'etudiant': 'Étudiant',
+  };
+  return roleTranslations[role] || role;
+};
+
+// Colonnes du tableau avec rendu personnalisé
+const getTableColumns = (permissions) => [
+  {
+    id: 'avatar',
+    label: 'Avatar',
+    align: 'center',
+    width: 80,
+    render: (value) => (
+      <Avatar
+        src={value}
+        alt="Avatar"
+        sx={{ width: 40, height: 40 }}
+      />
+    ),
+  },
+  {
+    id: 'name',
+    label: 'Nom complet',
+    align: 'left',
+    minWidth: 200,
+    render: (value) => (
+      <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+        {value}
+      </Typography>
+    ),
+  },
+  {
+    id: 'email',
+    label: 'Email',
+    align: 'left',
+    minWidth: 200,
+    render: (value) => (
+      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+        {value}
+      </Typography>
+    ),
+  },
+  {
+    id: 'phone',
+    label: 'Téléphone',
+    align: 'left',
+    minWidth: 150,
+    render: (value) => (
+      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+        {value}
+      </Typography>
+    ),
+  },
+  {
+    id: 'address',
+    label: 'Adresse',
+    align: 'left',
+    minWidth: 200,
+    render: (value) => (
+      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+        {value}
+      </Typography>
+    ),
+  },
+  {
+    id: 'role',
+    label: 'Rôle',
+    align: 'center',
+    width: 120,
+    render: (value) => (
+      <Chip
+        label={translateRole(value)}
+        color={getRoleColor(value)}
+        size="small"
+        variant="soft"
+      />
+    ),
+  },
+  {
+    id: 'created_at',
+    label: 'Créé le',
+    align: 'center',
+    width: 120,
+    render: (value) => (
+      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+        {formatDate(value)}
+      </Typography>
+    ),
+  },
+  ...(permissions.canSeeActions ? [{
+    id: 'actions',
+    label: 'Actions',
+    align: 'center',
+    width: 120,
+    render: (value, row) => (
+      <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
+        <Tooltip title="Voir">
+          <IconButton
+            size="small"
+            color="info"
+            onClick={() => row.onView(row.id)}
+          >
+            <Iconify icon="eva:eye-fill" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Modifier">
+          <IconButton
+            size="small"
+            color="primary"
+            onClick={() => row.onEdit(row.id)}
+          >
+            <Iconify icon="eva:edit-fill" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Supprimer">
+          <IconButton
+            size="small"
+            color="error"
+            onClick={() => row.onDelete(row.id)}
+          >
+            <Iconify icon="eva:trash-2-fill" />
+          </IconButton>
+        </Tooltip>
+      </Box>
+    ),
+  }] : []),
+];
 
 // ----------------------------------------------------------------------
 
@@ -60,11 +203,13 @@ export default function UserManagementPage() {
 
   const {
     users,
-    isLoading,
+    loading: isLoading,
+    error,
+    setError,
+    fetchUsers,
     createUser,
     updateUser,
     deleteUser,
-    updateUserRole,
   } = useUsers();
 
   const [openForm, setOpenForm] = useState(false);
@@ -72,6 +217,11 @@ export default function UserManagementPage() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [isEdit, setIsEdit] = useState(false);
   const [filterName, setFilterName] = useState('');
+
+  // Charger les utilisateurs au montage du composant
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   // Gestion du formulaire
   const handleOpenForm = (user = null) => {
@@ -95,6 +245,7 @@ export default function UserManagementPage() {
         await createUser(data);
         enqueueSnackbar('Utilisateur créé avec succès!');
       }
+      handleCloseForm();
     } catch (error) {
       enqueueSnackbar(error.message || 'Une erreur est survenue', { variant: 'error' });
     }
@@ -138,15 +289,6 @@ export default function UserManagementPage() {
     handleOpenConfirm(user);
   }, [users]);
 
-  const handleUpdateRole = useCallback(async (id, role) => {
-    try {
-      await updateUserRole(id, role);
-      enqueueSnackbar(`Rôle mis à jour avec succès!`);
-    } catch (error) {
-      enqueueSnackbar(error.message || 'Erreur lors de la mise à jour du rôle', { variant: 'error' });
-    }
-  }, [updateUserRole, enqueueSnackbar]);
-
   // Filtrage des données
   const filteredUsers = users.filter((user) =>
     `${user.first_name} ${user.last_name}`.toLowerCase().includes(filterName.toLowerCase()) ||
@@ -163,6 +305,10 @@ export default function UserManagementPage() {
     address: user.address || '-',
     role: user.role,
     created_at: user.created_at,
+    // Ajout des fonctions d'action pour chaque ligne
+    onEdit: handleEditRow,
+    onView: handleViewRow,
+    onDelete: handleDeleteRow,
   }));
 
   // Obtenir les colonnes selon les permissions
@@ -176,8 +322,8 @@ export default function UserManagementPage() {
 
       <Container maxWidth={themeStretch ? false : 'xl'}>
         {/* Section header avec titre et UserInfo */}
-        <Grid container spacing={3} sx={{ mb: 3 }}>
-          <Grid item xs={12} md={9}>
+        <Grid container spacing={3} sx={{ mb: 2 }} justifyContent="space-between">
+          <Grid item xs={12} md={5}>
             <CustomBreadcrumbs
               heading="Gestion des utilisateurs"
               links={[
@@ -203,10 +349,17 @@ export default function UserManagementPage() {
             />
           </Grid>
           
-          <Grid item xs={12} md={3}>
+          <Grid item xs={12} md={5}>
             <UserInfo />
           </Grid>
         </Grid>
+
+        {/* Affichage des erreurs */}
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+            {error}
+          </Alert>
+        )}
 
         {/* Tableau en pleine largeur */}
         <Card>
@@ -240,11 +393,6 @@ export default function UserManagementPage() {
           <DataTable
             data={tableData}
             columns={tableColumns}
-            tableData={tableData}
-            onEditRow={handleEditRow}
-            onViewRow={handleViewRow}
-            onDeleteRow={handleDeleteRow}
-            onUpdateRole={handleUpdateRole}
             onAddNew={() => handleOpenForm()}
             isLoading={isLoading}
             isFiltered={!!filterName}

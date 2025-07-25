@@ -41,9 +41,9 @@ export default function RoomManagementPage() {
   // Room management
   const {
     rooms,
-    isLoading,
+    loading: isLoading,
     error,
-    getAllRooms,
+    fetchRooms,
     deleteRoom,
   } = useRooms();
 
@@ -58,8 +58,8 @@ export default function RoomManagementPage() {
 
   // Load rooms on component mount
   const loadRooms = useCallback(() => {
-    getAllRooms();
-  }, [getAllRooms]);
+    fetchRooms();
+  }, [fetchRooms]);
 
   useEffect(() => {
     loadRooms();
@@ -81,18 +81,14 @@ export default function RoomManagementPage() {
   };
 
   const handleSearch = () => {
-    getAllRooms({
-      name: filterName,
-      building: filterBuilding,
-      floor: filterFloor,
-    });
+    fetchRooms();
   };
 
   const handleResetFilters = () => {
     setFilterName('');
     setFilterBuilding('');
     setFilterFloor('');
-    getAllRooms();
+    fetchRooms();
   };
 
   // Form handlers
