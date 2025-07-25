@@ -139,6 +139,7 @@ func (r *Router) SetupRoutes() *gin.Engine {
 			courses.GET("/by-room/:roomId", r.courseController.GetCoursesByRoom)
 			courses.GET("/by-teacher/:teacherId", r.courseController.GetCoursesByTeacher)
 			courses.POST("/check-conflicts", r.courseController.CheckConflicts)
+			courses.POST("/:id/check-conflicts", r.courseController.CheckConflictsForUpdate)
 		}
 	}
 

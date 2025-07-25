@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-// mock
-import { _calendarEvents } from '../_mock/arrays';
+import { useSnackbar } from '../components/snackbar';
+import apiClient from '../utils/api';
 
 // ----------------------------------------------------------------------
 
@@ -8,88 +8,101 @@ export const useCalendar = () => {
   const [events, setEvents] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const { enqueueSnackbar } = useSnackbar();
 
-  // Charger les événements
+  // Transformer les cours en événements de calendrier
+  const transformCoursesToEvents = useCallback((courses) => {
+    return courses.map((course) => {
+      return {
+        id: course.id,
+        title: course.name,
+        start: course.start_time,
+        end: course.end_time,
+        allDay: false,
+        color: '#2196F3', // Bleu plus moderne pour les cours
+        textColor: '#FFFFFF',
+        extendedProps: {
+          type: 'course',
+          course: course,
+          subject: course.subject?.name || 'Matière non définie',
+          teacher: course.teacher ? `${course.teacher.first_name} ${course.teacher.last_name}` : 'Professeur non défini',
+          room: course.room?.name || 'Salle non définie',
+          description: course.description || '',
+          isRecurring: course.is_recurring,
+          recurrencePattern: course.recurrence_pattern,
+          recurrenceEndDate: course.recurrence_end_date,
+        },
+      };
+    });
+  }, []);
+
+  // Charger les événements (cours)
   const loadEvents = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     
     try {
-      // Simuler un délai API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setEvents(_calendarEvents);
+      const response = await apiClient.get('/api/v1/admin/courses');
+      const courses = response.data.data || [];
+      const courseEvents = transformCoursesToEvents(courses);
+      setEvents(courseEvents);
     } catch (err) {
       setError(err.message);
+      enqueueSnackbar('Erreur lors du chargement des cours', { variant: 'error' });
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [transformCoursesToEvents, enqueueSnackbar]);
 
-  // Créer un événement
+  // Créer un cours (redirige vers la création de cours)
   const createEvent = useCallback(async (newEvent) => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      // Simuler un délai API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const event = {
-        ...newEvent,
-        id: `event-${Date.now()}`,
-      };
-      
-      setEvents(prev => [...prev, event]);
-      return event;
-    } catch (err) {
-      setError(err.message);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+    // Cette fonction redirigera vers la création de cours
+    // Pour l'instant, on recharge les événements
+    await loadEvents();
+  }, [loadEvents]);
 
-  // Mettre à jour un événement
+  // Mettre à jour un cours
   const updateEvent = useCallback(async (eventId, updatedEvent) => {
     setIsLoading(true);
     setError(null);
     
     try {
-      // Simuler un délai API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const event = {
-        ...updatedEvent,
-        id: eventId,
+      const courseData = {
+        name: updatedEvent.title,
+        start_time: updatedEvent.start,
+        end_time: updatedEvent.end,
+        description: updatedEvent.description || '',
       };
-      
-      setEvents(prev => prev.map(e => e.id === eventId ? event : e));
-      return event;
+
+      await apiClient.put(`/api/v1/admin/courses/${eventId}`, courseData);
+      await loadEvents(); // Recharger les événements
+      enqueueSnackbar('Cours mis à jour avec succès', { variant: 'success' });
     } catch (err) {
       setError(err.message);
+      enqueueSnackbar('Erreur lors de la mise à jour du cours', { variant: 'error' });
       throw err;
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [loadEvents, enqueueSnackbar]);
 
-  // Supprimer un événement
+  // Supprimer un cours
   const deleteEvent = useCallback(async (eventId) => {
     setIsLoading(true);
     setError(null);
     
     try {
-      // Simuler un délai API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setEvents(prev => prev.filter(e => e.id !== eventId));
+      await apiClient.delete(`/api/v1/admin/courses/${eventId}`);
+      await loadEvents(); // Recharger les événements
+      enqueueSnackbar('Cours supprimé avec succès', { variant: 'success' });
     } catch (err) {
       setError(err.message);
+      enqueueSnackbar('Erreur lors de la suppression du cours', { variant: 'error' });
       throw err;
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [loadEvents, enqueueSnackbar]);
 
   // Charger les événements au montage
   useEffect(() => {

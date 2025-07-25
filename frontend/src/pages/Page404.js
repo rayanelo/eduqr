@@ -14,20 +14,20 @@ export default function Page404() {
   return (
     <>
       <Helmet>
-        <title> 404 Page Not Found | Minimal UI</title>
+        <title> 404 Page Non Trouvée | EduQR</title>
       </Helmet>
 
       <MotionContainer>
         <m.div variants={varBounce().in}>
           <Typography variant="h3" paragraph>
-            Sorry, page not found!
+            Désolé, page non trouvée !
           </Typography>
         </m.div>
 
         <m.div variants={varBounce().in}>
           <Typography sx={{ color: 'text.secondary' }}>
-            Sorry, we couldn’t find the page you’re looking for. Perhaps you’ve mistyped the URL? Be
-            sure to check your spelling.
+            Désolé, nous n'avons pas trouvé la page que vous recherchez. Peut-être avez-vous mal tapé l'URL ? 
+            Vérifiez bien l'orthographe.
           </Typography>
         </m.div>
 
@@ -41,7 +41,7 @@ export default function Page404() {
         </m.div>
 
         <Button component={RouterLink} to="/" size="large" variant="contained">
-          Go to Home
+          Retour à l'accueil
         </Button>
       </MotionContainer>
     </>

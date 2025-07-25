@@ -19,18 +19,18 @@ export default function SearchNotFound({ query, sx, ...other }) {
       {...other}
     >
       <Typography variant="h6" paragraph>
-        Not found
+        Aucun résultat trouvé
       </Typography>
 
       <Typography variant="body2">
-        No results found for &nbsp;
+        Aucun résultat trouvé pour &nbsp;
         <strong>&quot;{query}&quot;</strong>.
-        <br /> Try checking for typos or using complete words.
+        <br /> Vérifiez l'orthographe ou utilisez des mots complets.
       </Typography>
     </Paper>
   ) : (
-    <Typography variant="body2" sx={sx}>
-      Please enter keywords
-    </Typography>
+          <Typography variant="body2" sx={sx}>
+        Veuillez saisir des mots-clés
+      </Typography>
   );
 }

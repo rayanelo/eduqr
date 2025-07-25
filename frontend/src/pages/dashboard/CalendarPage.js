@@ -8,9 +8,13 @@ import timelinePlugin from '@fullcalendar/timeline';
 import { useState, useRef, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 // @mui
-import { Card, Button, Container, DialogTitle, Dialog } from '@mui/material';
+import { Card, Button, Container } from '@mui/material';
 // hooks
 import { useCalendar } from '../../hooks/useCalendar';
+import { useCourses } from '../../hooks/useCourses';
+import { useSubjects } from '../../hooks/useSubjects';
+import { useTeachers } from '../../hooks/useTeachers';
+import { useRooms } from '../../hooks/useRooms';
 // routes
 import { PATH_DASHBOARD } from '../../routes/paths';
 // utils
@@ -25,23 +29,16 @@ import { useSettingsContext } from '../../components/settings';
 import { useDateRangePicker } from '../../hooks/useDateRangePicker';
 // sections
 import {
-  CalendarForm,
   StyledCalendar,
   CalendarToolbar,
   CalendarFilterDrawer,
 } from '../../sections/@dashboard/calendar';
+import CourseEventDialog from '../../sections/@dashboard/calendar/CourseEventDialog';
+import CourseFormDialog from '../../sections/courses/CourseFormDialog';
 
 // ----------------------------------------------------------------------
 
-const COLOR_OPTIONS = [
-  '#00AB55', // theme.palette.primary.main,
-  '#1890FF', // theme.palette.info.main,
-  '#54D62C', // theme.palette.success.main,
-  '#FFC107', // theme.palette.warning.main,
-  '#FF4842', // theme.palette.error.main
-  '#04297A', // theme.palette.info.darker
-  '#7A0C2E', // theme.palette.error.darker
-];
+// Suppression des options de couleur - tous les cours auront la même couleur
 
 // ----------------------------------------------------------------------
 
@@ -50,19 +47,25 @@ export default function CalendarPage() {
 
   const { themeStretch } = useSettingsContext();
 
-  const { events, createEvent, updateEvent, deleteEvent } = useCalendar();
+  const { events, updateEvent, deleteEvent } = useCalendar();
+  const { createCourse, updateCourse, deleteCourse, checkConflicts } = useCourses();
+  const { subjects, fetchSubjects } = useSubjects();
+  const { teachers, fetchTeachers } = useTeachers();
+  const { rooms, fetchRooms } = useRooms();
 
   const isDesktop = useResponsive('up', 'sm');
 
   const calendarRef = useRef(null);
 
-  const [openForm, setOpenForm] = useState(false);
+  const [openCourseDialog, setOpenCourseDialog] = useState(false);
+  const [openFormDialog, setOpenFormDialog] = useState(false);
 
   const [selectedEventId, setSelectedEventId] = useState(null);
+  const [initialFormData, setInitialFormData] = useState(null);
 
-  const [selectedRange, setSelectedRange] = useState(null);
+  const selectedEvent = selectedEventId ? events.find((event) => event.extendedProps?.course?.id === selectedEventId) : null;
+  
 
-  const selectedEvent = selectedEventId ? events.find((event) => event.id === selectedEventId) : null;
 
   const picker = useDateRangePicker(null, null);
 
@@ -70,7 +73,7 @@ export default function CalendarPage() {
 
   const [openFilter, setOpenFilter] = useState(false);
 
-  const [filterEventColor, setFilterEventColor] = useState([]);
+  // Suppression du filtre de couleur
 
   const [view, setView] = useState(isDesktop ? 'dayGridMonth' : 'listWeek');
 
@@ -85,14 +88,47 @@ export default function CalendarPage() {
     }
   }, [isDesktop]);
 
-  const handleOpenModal = () => {
-    setOpenForm(true);
+  // Charger les données nécessaires pour le formulaire de cours
+  useEffect(() => {
+    fetchSubjects();
+    fetchTeachers();
+    fetchRooms();
+  }, [fetchSubjects, fetchTeachers, fetchRooms]);
+
+
+
+  const handleOpenCourseDialog = () => {
+    setOpenCourseDialog(true);
   };
 
-  const handleCloseModal = () => {
-    setOpenForm(false);
-    setSelectedRange(null);
+  const handleCloseCourseDialog = () => {
+    setOpenCourseDialog(false);
     setSelectedEventId(null);
+  };
+
+  const handleCloseFormDialog = () => {
+    setOpenFormDialog(false);
+    setInitialFormData(null);
+  };
+
+  const handleSubmitCourse = async (data) => {
+    try {
+      // Vérifier les conflits avant de créer
+      const conflictsData = await checkConflicts(data);
+      if (conflictsData && conflictsData.has_conflicts) {
+        return conflictsData; // Retourner les conflits pour affichage
+      }
+
+      await createCourse(data);
+      enqueueSnackbar('Cours créé avec succès!', { variant: 'success' });
+      handleCloseFormDialog();
+      
+      // Recharger les événements du calendrier
+      window.location.reload(); // Solution temporaire pour recharger
+    } catch (error) {
+      console.error('Erreur lors de la création du cours:', error);
+      enqueueSnackbar('Erreur lors de la création du cours', { variant: 'error' });
+    }
   };
 
   const handleClickToday = () => {
@@ -142,16 +178,20 @@ export default function CalendarPage() {
 
       calendarApi.unselect();
     }
-    handleOpenModal();
-    setSelectedRange({
-      start: arg.start,
-      end: arg.end,
+    // Ouvrir la modal de création de cours avec les dates pré-remplies
+    setInitialFormData({
+      start_time: new Date(arg.start),
+      end_time: new Date(arg.end),
     });
+    setOpenFormDialog(true);
   };
 
   const handleSelectEvent = (arg) => {
-    handleOpenModal();
-    setSelectedEventId(arg.event.id);
+    // Utiliser l'ID du cours depuis extendedProps au lieu de l'ID de FullCalendar
+    const courseId = arg.event.extendedProps?.course?.id;
+    setSelectedEventId(courseId);
+    // Tous les événements sont des cours maintenant
+    handleOpenCourseDialog();
   };
 
   const handleResizeEvent = async ({ event }) => {
@@ -184,36 +224,33 @@ export default function CalendarPage() {
     try {
       if (selectedEventId) {
         await updateEvent(selectedEventId, newEvent);
-        enqueueSnackbar('Update success!');
+        enqueueSnackbar('Cours mis à jour avec succès!');
       } else {
-        await createEvent(newEvent);
-        enqueueSnackbar('Create success!');
+        // Rediriger vers la création de cours
+        window.location.href = '/dashboard/courses';
+        enqueueSnackbar('Redirection vers la création de cours...');
       }
     } catch (error) {
       console.error(error);
-      enqueueSnackbar('Error occurred!', { variant: 'error' });
+      enqueueSnackbar('Une erreur est survenue!', { variant: 'error' });
     }
   };
 
   const handleDeleteEvent = async () => {
     try {
       if (selectedEventId) {
-        handleCloseModal();
-        await deleteEvent(selectedEventId);
-        enqueueSnackbar('Delete success!');
+        // Trouver l'événement correspondant pour obtenir l'ID du cours
+        const event = events.find(e => e.id === selectedEventId);
+        if (event && event.extendedProps.course) {
+          handleCloseCourseDialog();
+          await deleteEvent(event.extendedProps.course.id);
+          enqueueSnackbar('Cours supprimé avec succès!');
+        }
       }
     } catch (error) {
       console.error(error);
-      enqueueSnackbar('Error occurred!', { variant: 'error' });
+      enqueueSnackbar('Une erreur est survenue!', { variant: 'error' });
     }
-  };
-
-  const handleFilterEventColor = (eventColor) => {
-    const checked = filterEventColor.includes(eventColor)
-      ? filterEventColor.filter((value) => value !== eventColor)
-      : [...filterEventColor, eventColor];
-
-    setFilterEventColor(checked);
   };
 
   const handleResetFilter = () => {
@@ -223,8 +260,6 @@ export default function CalendarPage() {
       setStartDate(null);
       setEndDate(null);
     }
-
-    setFilterEventColor([]);
   };
 
   // Transformer les événements pour inclure textColor
@@ -233,9 +268,10 @@ export default function CalendarPage() {
     textColor: event.color,
   }));
 
+
+
   const dataFiltered = applyFilter({
     inputData: transformedEvents,
-    filterEventColor,
     filterStartDate: picker.startDate,
     filterEndDate: picker.endDate,
     isError: !!picker.isError,
@@ -244,19 +280,19 @@ export default function CalendarPage() {
   return (
     <>
       <Helmet>
-        <title> Calendar | Minimal UI</title>
+        <title> Calendrier | EduQR</title>
       </Helmet>
 
       <Container maxWidth={themeStretch ? false : 'xl'}>
         <CustomBreadcrumbs
-          heading="Calendar"
+          heading="Calendrier"
           links={[
             {
               name: 'Dashboard',
               href: PATH_DASHBOARD.root,
             },
             {
-              name: 'Calendar',
+              name: 'Calendrier',
             },
           ]}
           moreLink={['https://fullcalendar.io/docs/react']}
@@ -264,9 +300,12 @@ export default function CalendarPage() {
             <Button
               variant="contained"
               startIcon={<Iconify icon="eva:plus-fill" />}
-              onClick={handleOpenModal}
+              onClick={() => {
+                setInitialFormData(null);
+                setOpenFormDialog(true);
+              }}
             >
-              New Event
+              Nouveau Cours
             </Button>
           }
         />
@@ -281,6 +320,11 @@ export default function CalendarPage() {
               onToday={handleClickToday}
               onChangeView={handleChangeView}
               onOpenFilter={() => setOpenFilter(true)}
+            onAddNew={() => {
+              // Ouvrir la modal de création de cours
+              setInitialFormData(null);
+              setOpenFormDialog(true);
+            }}
             />
 
             <FullCalendar
@@ -298,7 +342,6 @@ export default function CalendarPage() {
               eventDisplay="block"
               events={dataFiltered}
               headerToolbar={false}
-              initialEvents={events}
               select={handleSelectRange}
               eventDrop={handleDropEvent}
               eventClick={handleSelectEvent}
@@ -316,34 +359,35 @@ export default function CalendarPage() {
         </Card>
       </Container>
 
-      <Dialog fullWidth maxWidth="xs" open={openForm} onClose={handleCloseModal}>
-        <DialogTitle>{selectedEvent ? 'Edit Event' : 'Add Event'}</DialogTitle>
 
-        <CalendarForm
-          event={selectedEvent}
-          range={selectedRange}
-          onCancel={handleCloseModal}
-          onCreateUpdateEvent={handleCreateUpdateEvent}
-          onDeleteEvent={handleDeleteEvent}
-          colorOptions={COLOR_OPTIONS}
-        />
-      </Dialog>
 
       <CalendarFilterDrawer
         events={events}
         picker={picker}
         openFilter={openFilter}
-        colorOptions={COLOR_OPTIONS}
         onResetFilter={handleResetFilter}
-        filterEventColor={filterEventColor}
         onCloseFilter={() => setOpenFilter(false)}
-        onFilterEventColor={handleFilterEventColor}
         onSelectEvent={(eventId) => {
           if (eventId) {
-            handleOpenModal();
             setSelectedEventId(eventId);
+            handleOpenCourseDialog();
           }
         }}
+      />
+
+      <CourseEventDialog
+        open={openCourseDialog}
+        onClose={handleCloseCourseDialog}
+        event={selectedEvent}
+        onUpdate={handleCreateUpdateEvent}
+        onDelete={handleDeleteEvent}
+      />
+
+      <CourseFormDialog
+        open={openFormDialog}
+        onClose={handleCloseFormDialog}
+        onSubmit={handleSubmitCourse}
+        initialData={initialFormData}
       />
     </>
   );
@@ -351,14 +395,10 @@ export default function CalendarPage() {
 
 
 
-function applyFilter({ inputData, filterEventColor, filterStartDate, filterEndDate, isError }) {
+function applyFilter({ inputData, filterStartDate, filterEndDate, isError }) {
   const stabilizedThis = inputData.map((el, index) => [el, index]);
 
   inputData = stabilizedThis.map((el) => el[0]);
-
-  if (filterEventColor.length) {
-    inputData = inputData.filter((event) => filterEventColor.includes(event.color));
-  }
 
   if (filterStartDate && filterEndDate && !isError) {
     inputData = inputData.filter(

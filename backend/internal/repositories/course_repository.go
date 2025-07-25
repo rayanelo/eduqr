@@ -58,7 +58,7 @@ func (r *CourseRepository) UpdateCourse(course *models.Course) error {
 	course.EndTime = course.StartTime.Add(time.Duration(course.Duration) * time.Minute)
 
 	// Vérifier les conflits (en excluant le cours lui-même)
-	conflicts, err := r.checkConflictsExcluding(course.ID, course)
+	conflicts, err := r.CheckConflictsExcluding(course.ID, course)
 	if err != nil {
 		return err
 	}
@@ -76,6 +76,12 @@ func (r *CourseRepository) DeleteCourse(id uint) error {
 
 // DeleteRecurringCourses supprime tous les cours d'une série récurrente
 func (r *CourseRepository) DeleteRecurringCourses(recurrenceID uint) error {
+	// Supprimer d'abord le cours parent
+	if err := r.db.Delete(&models.Course{}, recurrenceID).Error; err != nil {
+		return err
+	}
+
+	// Puis supprimer tous les cours enfants
 	return r.db.Where("recurrence_id = ?", recurrenceID).Delete(&models.Course{}).Error
 }
 
@@ -146,8 +152,8 @@ func (r *CourseRepository) CheckConflicts(course *models.Course) ([]models.Confl
 	return conflicts, nil
 }
 
-// checkConflictsExcluding vérifie les conflits en excluant un cours spécifique
-func (r *CourseRepository) checkConflictsExcluding(excludeID uint, course *models.Course) ([]models.ConflictInfo, error) {
+// CheckConflictsExcluding vérifie les conflits en excluant un cours spécifique
+func (r *CourseRepository) CheckConflictsExcluding(excludeID uint, course *models.Course) ([]models.ConflictInfo, error) {
 	var conflicts []models.ConflictInfo
 
 	// Récupérer la salle avec ses relations
@@ -213,14 +219,40 @@ func (r *CourseRepository) checkRoomConflicts(roomID uint, startTime, endTime ti
 	return conflicts, nil
 }
 
-// checkRoomConflictsExcluding vérifie les conflits en excluant un cours spécifique
+// checkRoomConflictsExcluding vérifie les conflits en excluant un cours spécifique et ses cours récurrents associés
 func (r *CourseRepository) checkRoomConflictsExcluding(excludeID uint, roomID uint, startTime, endTime time.Time) ([]models.ConflictInfo, error) {
 	var conflicts []models.ConflictInfo
 
+	// Récupérer le cours à exclure pour vérifier s'il est récurrent
+	var excludeCourse models.Course
+	if err := r.db.First(&excludeCourse, excludeID).Error; err != nil {
+		return nil, err
+	}
+
+	// Construire la condition WHERE pour exclure le cours et ses cours récurrents associés
+	whereCondition := "room_id = ? AND ((start_time <= ? AND end_time > ?) OR (start_time < ? AND end_time >= ?) OR (start_time >= ? AND end_time <= ?))"
+	args := []interface{}{roomID, startTime, startTime, endTime, endTime, startTime, endTime}
+
+	// Exclure le cours lui-même
+	whereCondition += " AND id != ?"
+	args = append(args, excludeID)
+
+	// Si c'est un cours récurrent, exclure aussi tous les cours de la même série
+	if excludeCourse.IsRecurring {
+		if excludeCourse.RecurrenceID == nil {
+			// C'est un cours parent récurrent, exclure tous ses enfants
+			whereCondition += " AND (recurrence_id IS NULL OR recurrence_id != ?)"
+			args = append(args, excludeID)
+		} else {
+			// C'est un cours enfant récurrent, exclure le parent et tous les autres enfants
+			whereCondition += " AND (recurrence_id IS NULL OR recurrence_id != ?)"
+			args = append(args, *excludeCourse.RecurrenceID)
+		}
+	}
+
 	var existingCourses []models.Course
 	err := r.db.Preload("Room").
-		Where("room_id = ? AND id != ? AND ((start_time <= ? AND end_time > ?) OR (start_time < ? AND end_time >= ?) OR (start_time >= ? AND end_time <= ?))",
-			roomID, excludeID, startTime, startTime, endTime, endTime, startTime, endTime).
+		Where(whereCondition, args...).
 		Find(&existingCourses).Error
 
 	if err != nil {
@@ -270,8 +302,8 @@ func (r *CourseRepository) GenerateRecurringCourses(parentCourse *models.Course)
 				)
 				course.EndTime = course.StartTime.Add(time.Duration(course.Duration) * time.Minute)
 
-				// Vérifier les conflits
-				conflicts, err := r.CheckConflicts(&course)
+				// Vérifier les conflits en excluant les cours de la même série récurrente
+				conflicts, err := r.CheckConflictsExcluding(parentCourse.ID, &course)
 				if err != nil {
 					return err
 				}

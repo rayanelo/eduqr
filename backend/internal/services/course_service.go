@@ -127,7 +127,8 @@ func (s *CourseService) UpdateCourse(id uint, req *models.UpdateCourseRequest) (
 	// Récupérer le cours existant
 	course, err := s.courseRepo.GetCourseByID(id)
 	if err != nil {
-		return nil, err
+		// Si le cours n'existe pas, retourner une erreur explicite
+		return nil, fmt.Errorf("cours avec l'ID %d non trouvé", id)
 	}
 
 	// Vérifier que la matière existe si elle est modifiée
@@ -184,13 +185,53 @@ func (s *CourseService) UpdateCourse(id uint, req *models.UpdateCourseRequest) (
 	}
 	course.ExcludeHolidays = req.ExcludeHolidays
 
-	// Mettre à jour le cours
-	if err := s.courseRepo.UpdateCourse(course); err != nil {
-		return nil, err
+	// Si c'est un cours récurrent, supprimer tous les cours récurrents existants et les régénérer
+	if course.IsRecurring {
+		fmt.Printf("DEBUG: Cours récurrent détecté - ID: %d, RecurrenceID: %v, IsRecurring: %v\n", course.ID, course.RecurrenceID, course.IsRecurring)
+
+		// Vérifier si c'est un cours parent récurrent (pas un cours enfant)
+		if course.RecurrenceID == nil {
+			fmt.Printf("DEBUG: Cours parent récurrent - Suppression et régénération\n")
+			// C'est un cours parent récurrent, supprimer toute la série et régénérer
+			if err := s.courseRepo.DeleteRecurringCourses(id); err != nil {
+				return nil, fmt.Errorf("erreur lors de la suppression des cours récurrents: %v", err)
+			}
+
+			// Réinitialiser l'ID pour créer un nouveau cours
+			course.ID = 0
+			course.CreatedAt = time.Time{}
+			course.UpdatedAt = time.Time{}
+
+			// Créer le nouveau cours parent
+			if err := s.courseRepo.CreateCourse(course); err != nil {
+				return nil, err
+			}
+
+			// Régénérer les cours récurrents
+			if err := s.courseRepo.GenerateRecurringCourses(course); err != nil {
+				// Supprimer le cours parent si la génération échoue
+				s.courseRepo.DeleteCourse(course.ID)
+				return nil, fmt.Errorf("erreur lors de la régénération des cours récurrents: %v", err)
+			}
+
+			// Le cours a été recréé avec un nouvel ID, retourner directement la réponse
+			response := course.ToCourseResponse()
+			return &response, nil
+		} else {
+			fmt.Printf("DEBUG: Cours enfant récurrent - Modification interdite\n")
+			// C'est un cours enfant d'une série récurrente, on ne peut pas le modifier directement
+			return nil, fmt.Errorf("impossible de modifier un cours récurrent individuel. Modifiez le cours parent de la série.")
+		}
+	} else {
+		fmt.Printf("DEBUG: Cours ponctuel - Modification normale\n")
+		// Cours ponctuel
+		if err := s.courseRepo.UpdateCourse(course); err != nil {
+			return nil, err
+		}
 	}
 
 	// Récupérer le cours mis à jour avec ses relations
-	updatedCourse, err := s.courseRepo.GetCourseByID(id)
+	updatedCourse, err := s.courseRepo.GetCourseByID(course.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -270,4 +311,49 @@ func (s *CourseService) CheckConflicts(req *models.CreateCourseRequest) ([]model
 	}
 
 	return s.courseRepo.CheckConflicts(course)
+}
+
+// CheckConflictsForUpdate vérifie les conflits pour la modification d'un cours
+func (s *CourseService) CheckConflictsForUpdate(courseID uint, req *models.UpdateCourseRequest) ([]models.ConflictInfo, error) {
+	// Récupérer le cours existant
+	existingCourse, err := s.courseRepo.GetCourseByID(courseID)
+	if err != nil {
+		// Si le cours n'existe pas, retourner une liste vide de conflits
+		// car il ne peut pas y avoir de conflit avec un cours inexistant
+		return []models.ConflictInfo{}, nil
+	}
+
+	// Créer un cours temporaire avec les nouvelles valeurs
+	course := &models.Course{
+		ID:        courseID,
+		RoomID:    req.RoomID,
+		StartTime: req.StartTime,
+		Duration:  req.Duration,
+	}
+
+	// Utiliser les valeurs existantes si non modifiées
+	if req.RoomID == 0 {
+		course.RoomID = existingCourse.RoomID
+	}
+	if req.StartTime.IsZero() {
+		course.StartTime = existingCourse.StartTime
+	}
+	if req.Duration == 0 {
+		course.Duration = existingCourse.Duration
+	}
+
+	// Calculer l'heure de fin
+	course.EndTime = course.StartTime.Add(time.Duration(course.Duration) * time.Minute)
+
+	// Pour les cours récurrents, exclure le cours parent et tous ses enfants
+	if existingCourse.IsRecurring && existingCourse.RecurrenceID == nil {
+		// C'est un cours parent récurrent, exclure toute la série
+		return s.courseRepo.CheckConflictsExcluding(courseID, course)
+	} else if existingCourse.IsRecurring && existingCourse.RecurrenceID != nil {
+		// C'est un cours enfant récurrent, exclure le parent et tous les enfants
+		return s.courseRepo.CheckConflictsExcluding(*existingCourse.RecurrenceID, course)
+	} else {
+		// Cours ponctuel, exclure seulement ce cours
+		return s.courseRepo.CheckConflictsExcluding(courseID, course)
+	}
 }

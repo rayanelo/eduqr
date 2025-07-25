@@ -47,7 +47,7 @@ CalendarForm.propTypes = {
 export default function CalendarForm({
   event,
   range,
-  colorOptions,
+  colorOptions = ['#1890FF', '#54B435', '#FF4842', '#04297A', '#7A0C2E'],
   onCreateUpdateEvent,
   onDeleteEvent,
   onCancel,
@@ -55,7 +55,7 @@ export default function CalendarForm({
   const hasEventData = !!event;
 
   const EventSchema = Yup.object().shape({
-    title: Yup.string().max(255).required('Title is required'),
+    title: Yup.string().max(255).required('Le titre est requis'),
     description: Yup.string().max(5000),
   });
 
@@ -100,11 +100,11 @@ export default function CalendarForm({
   return (
     <FormProvider methods={methods} onSubmit={handleSubmit(onSubmit)}>
       <Stack spacing={3} sx={{ px: 3 }}>
-        <RHFTextField name="title" label="Title" />
+        <RHFTextField name="title" label="Titre" />
 
         <RHFTextField name="description" label="Description" multiline rows={3} />
 
-        <RHFSwitch name="allDay" label="All day" />
+        <RHFSwitch name="allDay" label="Toute la journée" />
 
         <Controller
           name="start"
@@ -113,7 +113,7 @@ export default function CalendarForm({
             <DateTimePicker
               {...field}
               onChange={(newValue) => field.onChange(newValue)}
-              label="Start date"
+              label="Date de début"
             />
           )}
         />
@@ -125,9 +125,9 @@ export default function CalendarForm({
             <DateTimePicker
               {...field}
               onChange={(newValue) => field.onChange(newValue)}
-              label="End date"
+              label="Date de fin"
               error={!!isDateError}
-              helperText={isDateError && 'End date must be later than start date'}
+              helperText={isDateError ? 'La date de fin doit être postérieure à la date de début' : ''}
             />
           )}
         />
@@ -157,11 +157,11 @@ export default function CalendarForm({
         <Box sx={{ flexGrow: 1 }} />
 
         <Button variant="outlined" color="inherit" onClick={onCancel}>
-          Cancel
+          Annuler
         </Button>
 
         <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
-          {hasEventData ? 'Update' : 'Add'}
+          {hasEventData ? 'Modifier' : 'Ajouter'}
         </LoadingButton>
       </DialogActions>
     </FormProvider>

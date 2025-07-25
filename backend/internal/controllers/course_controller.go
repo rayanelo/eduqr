@@ -222,3 +222,31 @@ func (c *CourseController) CheckConflicts(ctx *gin.Context) {
 		"has_conflicts": len(conflicts) > 0,
 	})
 }
+
+// CheckConflictsForUpdate vérifie les conflits pour la modification d'un cours
+func (c *CourseController) CheckConflictsForUpdate(ctx *gin.Context) {
+	courseIDStr := ctx.Param("id")
+	courseID, err := strconv.ParseUint(courseIDStr, 10, 32)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "ID de cours invalide"})
+		return
+	}
+
+	var req models.UpdateCourseRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Données invalides: " + err.Error()})
+		return
+	}
+
+	conflicts, err := c.courseService.CheckConflictsForUpdate(uint(courseID), &req)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de la vérification des conflits"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"success":       true,
+		"data":          conflicts,
+		"has_conflicts": len(conflicts) > 0,
+	})
+}

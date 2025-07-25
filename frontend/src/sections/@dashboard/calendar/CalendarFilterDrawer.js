@@ -18,7 +18,7 @@ import { fDateTime } from '../../../utils/formatTime';
 // components
 import Iconify from '../../../components/iconify';
 import Scrollbar from '../../../components/scrollbar';
-import { ColorMultiPicker } from '../../../components/color-utils';
+// Suppression de l'import ColorMultiPicker
 
 // ----------------------------------------------------------------------
 
@@ -29,23 +29,17 @@ CalendarFilterDrawer.propTypes = {
   onCloseFilter: PropTypes.func,
   onResetFilter: PropTypes.func,
   onSelectEvent: PropTypes.func,
-  onFilterEventColor: PropTypes.func,
-  colorOptions: PropTypes.arrayOf(PropTypes.string),
-  filterEventColor: PropTypes.arrayOf(PropTypes.string),
 };
 
 export default function CalendarFilterDrawer({
   events,
   picker,
   openFilter,
-  colorOptions,
   onCloseFilter,
   onResetFilter,
   onSelectEvent,
-  filterEventColor,
-  onFilterEventColor,
 }) {
-  const notDefault = (picker.startDate && picker.endDate) || !!filterEventColor.length;
+  const notDefault = (picker.startDate && picker.endDate);
 
   return (
     <Drawer
@@ -65,9 +59,9 @@ export default function CalendarFilterDrawer({
         justifyContent="space-between"
         sx={{ pl: 2, pr: 1, py: 2 }}
       >
-        <Typography variant="subtitle1">Filters</Typography>
+        <Typography variant="subtitle1">Filtres</Typography>
 
-        <Tooltip title="Reset">
+        <Tooltip title="Réinitialiser">
           <Box sx={{ position: 'relative' }}>
             <IconButton onClick={onResetFilter}>
               <Iconify icon="ic:round-refresh" />
@@ -92,23 +86,7 @@ export default function CalendarFilterDrawer({
 
       <Divider />
 
-      <Typography
-        variant="caption"
-        sx={{
-          color: 'text.secondary',
-          fontWeight: 'fontWeightMedium',
-          p: (theme) => theme.spacing(2, 2, 1, 2),
-        }}
-      >
-        Colors
-      </Typography>
-
-      <ColorMultiPicker
-        colors={colorOptions}
-        selected={filterEventColor}
-        onChangeColor={onFilterEventColor}
-        sx={{ mx: 2 }}
-      />
+      {/* Suppression de la section des couleurs */}
 
       <Typography
         variant="caption"
@@ -118,24 +96,24 @@ export default function CalendarFilterDrawer({
           fontWeight: 'fontWeightMedium',
         }}
       >
-        Range
+        Période
       </Typography>
 
       <Stack spacing={2} sx={{ px: 2 }}>
         <DatePicker
-          label="Start date"
+          label="Date de début"
           value={picker.startDate}
           onChange={picker.onChangeStartDate}
           size="small"
         />
 
         <DatePicker
-          label="End date"
+          label="Date de fin"
           value={picker.endDate}
           onChange={picker.onChangeEndDate}
           size="small"
           error={picker.isError}
-          helperText={picker.isError && 'End date must be later than start date'}
+          helperText={picker.isError && 'La date de fin doit être postérieure à la date de début'}
         />
       </Stack>
 
@@ -147,7 +125,7 @@ export default function CalendarFilterDrawer({
           fontWeight: 'fontWeightMedium',
         }}
       >
-        Events ({events.length})
+        Cours ({events.length})
       </Typography>
 
       <Scrollbar sx={{ height: 1 }}>

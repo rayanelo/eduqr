@@ -147,6 +147,21 @@ export const useCourses = () => {
     }
   }, []);
 
+  // Vérifier les conflits pour la modification
+  const checkConflictsForUpdate = useCallback(async (courseId, courseData) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await apiClient.post(`/api/v1/admin/courses/${courseId}/check-conflicts`, courseData);
+      return response.data;
+    } catch (err) {
+      setError(err.response?.data?.error || 'Erreur lors de la vérification des conflits');
+      return { has_conflicts: false, data: [] };
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   return {
     courses,
     loading,
@@ -160,6 +175,7 @@ export const useCourses = () => {
     getCoursesByDateRange,
     getCoursesByRoom,
     getCoursesByTeacher,
-    checkConflicts
+    checkConflicts,
+    checkConflictsForUpdate
   };
 }; 

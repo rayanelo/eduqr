@@ -13,9 +13,9 @@ import MenuPopover from '../../../components/menu-popover';
 // ----------------------------------------------------------------------
 
 const VIEW_OPTIONS = [
-  { value: 'dayGridMonth', label: 'Month', icon: 'ic:round-view-module' },
-  { value: 'timeGridWeek', label: 'Week', icon: 'ic:round-view-week' },
-  { value: 'timeGridDay', label: 'Day', icon: 'ic:round-view-day' },
+  { value: 'dayGridMonth', label: 'Mois', icon: 'ic:round-view-module' },
+  { value: 'timeGridWeek', label: 'Semaine', icon: 'ic:round-view-week' },
+  { value: 'timeGridDay', label: 'Jour', icon: 'ic:round-view-day' },
   { value: 'listWeek', label: 'Agenda', icon: 'ic:round-view-agenda' },
 ];
 
@@ -27,6 +27,7 @@ CalendarToolbar.propTypes = {
   onPrevDate: PropTypes.func,
   onOpenFilter: PropTypes.func,
   onChangeView: PropTypes.func,
+  onAddNew: PropTypes.func,
   date: PropTypes.instanceOf(Date),
   view: PropTypes.oneOf(['dayGridMonth', 'timeGridWeek', 'timeGridDay', 'listWeek']),
 };
@@ -39,6 +40,7 @@ export default function CalendarToolbar({
   onPrevDate,
   onChangeView,
   onOpenFilter,
+  onAddNew,
 }) {
   const isDesktop = useResponsive('up', 'sm');
 
@@ -92,8 +94,19 @@ export default function CalendarToolbar({
         </Stack>
 
         <Stack direction="row" alignItems="center" spacing={1}>
+          {onAddNew && (
+            <Button
+              size="small"
+              variant="contained"
+              startIcon={<Iconify icon="eva:plus-fill" />}
+              onClick={onAddNew}
+            >
+              Nouveau Cours
+            </Button>
+          )}
+
           <Button size="small" color="error" variant="contained" onClick={onToday}>
-            Today
+            Aujourd'hui
           </Button>
 
           <IconButton onClick={onOpenFilter}>

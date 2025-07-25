@@ -60,7 +60,7 @@ const DAYS_OF_WEEK = [
   { value: 'Sunday', label: 'Dimanche' }
 ];
 
-export default function CourseFormDialog({ open, onClose, course = null, onSubmit }) {
+export default function CourseFormDialog({ open, onClose, course = null, onSubmit, initialData = null }) {
   const [selectedDays, setSelectedDays] = useState([]);
   const [conflicts, setConflicts] = useState([]);
   const [showConflicts, setShowConflicts] = useState(false);
@@ -125,23 +125,26 @@ export default function CourseFormDialog({ open, onClose, course = null, onSubmi
           }
         }
       } else {
-        reset({
+        // Utiliser les données initiales si disponibles
+        const defaultValues = {
           name: '',
           subject_id: '',
           teacher_id: '',
           room_id: '',
-          start_time: new Date(),
+          start_time: initialData?.start_time || new Date(),
           duration: 60,
           description: '',
           is_recurring: false,
           recurrence_pattern: '',
-          recurrence_end_date: new Date(),
+          recurrence_end_date: initialData?.end_time || new Date(),
           exclude_holidays: true
-        });
+        };
+        
+        reset(defaultValues);
         setSelectedDays([]);
       }
     }
-  }, [open, course, reset, fetchSubjects, fetchTeachers, fetchRooms]);
+  }, [open, course, reset, fetchSubjects, fetchTeachers, fetchRooms, initialData]);
 
   const handleDayToggle = (day) => {
     const newSelectedDays = selectedDays.includes(day)
@@ -153,8 +156,13 @@ export default function CourseFormDialog({ open, onClose, course = null, onSubmi
   };
 
   const handleFormSubmit = async (data) => {
+    // Éviter les soumissions multiples
+    if (isSubmitting) {
+      return;
+    }
+
     try {
-      // Vérifier les conflits avant de soumettre
+      // Soumettre le formulaire (inclut la vérification des conflits)
       const conflictsData = await onSubmit(data);
       if (conflictsData && conflictsData.has_conflicts) {
         setConflicts(conflictsData.data);
@@ -162,7 +170,7 @@ export default function CourseFormDialog({ open, onClose, course = null, onSubmi
         return;
       }
 
-      await onSubmit(data);
+      // Si pas de conflits, fermer le dialogue et réinitialiser
       onClose();
       reset();
       setSelectedDays([]);

@@ -10,7 +10,7 @@ ColorSinglePicker.propTypes = {
   onChange: PropTypes.func,
 };
 
-export default function ColorSinglePicker({ colors, value, onChange }) {
+export default function ColorSinglePicker({ colors = [], value, onChange }) {
   return (
     <RadioGroup value={value} onChange={onChange}>
       <Box
@@ -18,7 +18,7 @@ export default function ColorSinglePicker({ colors, value, onChange }) {
         display="grid"
         gridTemplateColumns="repeat(7, 1fr)"
       >
-        {colors.map((color) => {
+        {(colors || []).map((color) => {
           return (
             <FormControlLabel
               key={color}

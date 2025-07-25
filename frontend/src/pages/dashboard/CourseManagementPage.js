@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
 import {
   Container,
@@ -40,6 +41,7 @@ import InfoIcon from '@mui/icons-material/Info';
 
 export default function CourseManagementPage() {
   const theme = useTheme();
+  const location = useLocation();
   
   const TABLE_HEAD = [
     { id: 'name', label: 'Nom du cours', align: 'left', minWidth: 200 },
@@ -54,7 +56,7 @@ export default function CourseManagementPage() {
 
   const { user } = useContext(AuthContext);
   const { canManageCourses } = usePermissions();
-  const { courses, error, setError, fetchCourses, createCourse, updateCourse, deleteCourse, checkConflicts } = useCourses();
+  const { courses, error, setError, fetchCourses, createCourse, updateCourse, deleteCourse, checkConflicts, checkConflictsForUpdate } = useCourses();
   const { subjects, fetchSubjects } = useSubjects();
   const { teachers, fetchTeachers } = useTeachers();
   const { rooms, fetchRooms } = useRooms();
@@ -68,6 +70,26 @@ export default function CourseManagementPage() {
   const [filterRoom, setFilterRoom] = useState('');
   const [selectedRecurringCourse, setSelectedRecurringCourse] = useState(null);
   const [showRecurringDetails, setShowRecurringDetails] = useState(false);
+  const [initialFormData, setInitialFormData] = useState(null);
+
+  // Vérifier les paramètres d'URL pour les dates pré-remplies
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const startDate = searchParams.get('start');
+    const endDate = searchParams.get('end');
+    
+    if (startDate && endDate) {
+      // Ouvrir automatiquement le formulaire avec les dates pré-remplies
+      setInitialFormData({
+        start_time: new Date(startDate),
+        end_time: new Date(endDate),
+      });
+      setOpenFormDialog(true);
+      
+      // Nettoyer l'URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [location.search]);
 
   useEffect(() => {
     if (user && canManageCourses) {
@@ -104,17 +126,22 @@ export default function CourseManagementPage() {
             c.recurrence_id === course.recurrence_id
           );
           
-          // Créer un cours "parent" qui représente toute la série
-          const parentCourse = {
-            ...course,
-            is_recurring_series: true,
-            series_count: recurringSeries.length,
-            series_dates: recurringSeries.map(c => new Date(c.start_time)),
-            series_end_date: course.recurrence_end_date,
-            series_pattern: course.recurrence_pattern
-          };
+          // Trouver le cours parent (celui avec recurrence_id = null)
+          const parentCourse = courses.find(c => c.id === course.recurrence_id);
           
-          grouped.push(parentCourse);
+          if (parentCourse) {
+            // Créer un cours "parent" qui représente toute la série
+            const seriesCourse = {
+              ...parentCourse,
+              is_recurring_series: true,
+              series_count: recurringSeries.length,
+              series_dates: recurringSeries.map(c => new Date(c.start_time)),
+              series_end_date: parentCourse.recurrence_end_date,
+              series_pattern: parentCourse.recurrence_pattern
+            };
+            
+            grouped.push(seriesCourse);
+          }
         }
       } else if (!course.is_recurring) {
         // Cours ponctuel - l'ajouter directement
@@ -318,6 +345,7 @@ export default function CourseManagementPage() {
   const handleCloseFormDialog = () => {
     setOpenFormDialog(false);
     setSelectedCourse(null);
+    setInitialFormData(null);
   };
 
   const handleOpenDeleteDialog = (course) => {
@@ -343,7 +371,14 @@ export default function CourseManagementPage() {
   const handleSubmitCourse = async (data) => {
     try {
       // Vérifier les conflits d'abord
-      const conflictsData = await checkConflicts(data);
+      let conflictsData;
+      if (selectedCourse) {
+        // Modification d'un cours existant
+        conflictsData = await checkConflictsForUpdate(selectedCourse.id, data);
+      } else {
+        // Création d'un nouveau cours
+        conflictsData = await checkConflicts(data);
+      }
       
       if (conflictsData.has_conflicts) {
         return conflictsData; // Retourner les conflits pour affichage
@@ -352,6 +387,7 @@ export default function CourseManagementPage() {
       // Créer ou mettre à jour le cours
       if (selectedCourse) {
         await updateCourse(selectedCourse.id, data);
+        // fetchCourses() est déjà appelé dans updateCourse()
       } else {
         await createCourse(data);
       }
@@ -513,6 +549,7 @@ export default function CourseManagementPage() {
         onClose={handleCloseFormDialog}
         course={selectedCourse}
         onSubmit={handleSubmitCourse}
+        initialData={initialFormData}
       />
 
       {/* Dialog de confirmation de suppression */}
