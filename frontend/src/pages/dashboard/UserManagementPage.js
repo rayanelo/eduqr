@@ -14,12 +14,12 @@ import {
   Chip,
   IconButton,
   Tooltip,
-  Box,
   Typography,
 } from '@mui/material';
 // hooks
 import { useUsers } from '../../hooks/useUsers';
 import { usePermissions } from '../../hooks/usePermissions';
+import { useDeletion } from '../../hooks/useDeletion';
 // routes
 import { PATH_DASHBOARD } from '../../routes/paths';
 // components
@@ -29,7 +29,7 @@ import CustomBreadcrumbs from '../../components/custom-breadcrumbs';
 import { useSettingsContext } from '../../components/settings';
 import { DataTable } from '../../components/data-table';
 import UserForm from '../../components/user-form/UserForm';
-import { ConfirmDialog } from '../../components/confirm-dialog';
+import DeleteConfirmDialog from '../../components/confirm-dialog/DeleteConfirmDialog';
 import UserInfo from '../../components/user-info/UserInfo';
 
 // ----------------------------------------------------------------------
@@ -102,143 +102,119 @@ const getTableColumns = (permissions) => [
     label: 'Email',
     align: 'left',
     minWidth: 200,
-    render: (value) => (
-      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-        {value}
-      </Typography>
-    ),
   },
   {
     id: 'phone',
     label: 'Téléphone',
     align: 'left',
     minWidth: 150,
-    render: (value) => (
-      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-        {value}
-      </Typography>
-    ),
-  },
-  {
-    id: 'address',
-    label: 'Adresse',
-    align: 'left',
-    minWidth: 200,
-    render: (value) => (
-      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-        {value}
-      </Typography>
-    ),
   },
   {
     id: 'role',
     label: 'Rôle',
     align: 'center',
-    width: 120,
+    minWidth: 120,
     render: (value) => (
       <Chip
         label={translateRole(value)}
         color={getRoleColor(value)}
         size="small"
-        variant="soft"
       />
     ),
   },
   {
     id: 'created_at',
-    label: 'Créé le',
+    label: 'Date de création',
     align: 'center',
-    width: 120,
-    render: (value) => (
-      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-        {formatDate(value)}
-      </Typography>
-    ),
+    minWidth: 150,
+    render: (value) => formatDate(value),
   },
-  ...(permissions.canSeeActions ? [{
+  {
     id: 'actions',
     label: 'Actions',
     align: 'center',
-    width: 120,
-    render: (value, row) => (
-      <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
-        <Tooltip title="Voir">
-          <IconButton
-            size="small"
-            color="info"
-            onClick={() => row.onView(row.id)}
-          >
-            <Iconify icon="eva:eye-fill" />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="Modifier">
-          <IconButton
-            size="small"
-            color="primary"
-            onClick={() => row.onEdit(row.id)}
-          >
-            <Iconify icon="eva:edit-fill" />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="Supprimer">
-          <IconButton
-            size="small"
-            color="error"
-            onClick={() => row.onDelete(row.id)}
-          >
-            <Iconify icon="eva:trash-2-fill" />
-          </IconButton>
-        </Tooltip>
-      </Box>
-    ),
-  }] : []),
+    minWidth: 120,
+    render: (value, row) => {
+      const user = { id: row.id, role: row.role };
+      
+      return (
+        <Stack direction="row" spacing={1} justifyContent="center">
+          {permissions.canView && permissions.canView(user) && (
+            <Tooltip title="Voir">
+              <IconButton
+                size="small"
+                color="info"
+                onClick={() => row.onView(row.id)}
+              >
+                <Iconify icon="eva:eye-fill" />
+              </IconButton>
+            </Tooltip>
+          )}
+          
+          {permissions.canEdit && permissions.canEdit(user) && (
+            <Tooltip title="Modifier">
+              <IconButton
+                size="small"
+                color="primary"
+                onClick={() => row.onEdit(row.id)}
+              >
+                <Iconify icon="eva:edit-fill" />
+              </IconButton>
+            </Tooltip>
+          )}
+          
+          {permissions.canDelete && permissions.canDelete(user) && (
+            <Tooltip title="Supprimer">
+              <IconButton
+                size="small"
+                color="error"
+                onClick={() => row.onDelete(row.id)}
+              >
+                <Iconify icon="eva:trash-2-fill" />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Stack>
+      );
+    },
+  },
 ];
 
 // ----------------------------------------------------------------------
 
 export default function UserManagementPage() {
-  const { themeStretch } = useSettingsContext();
+  const themeStretch = useSettingsContext();
   const { enqueueSnackbar } = useSnackbar();
-  const { getCreatableRoles, canSeeActions } = usePermissions();
+  const { users, loading, error, fetchUsers, createUser, updateUser } = useUsers();
+  const { canManageUsers, canDeleteUser, canEditUser, canViewUser } = usePermissions();
+  const { deleteUser, isDeleting } = useDeletion();
 
-  const {
-    users,
-    loading: isLoading,
-    error,
-    setError,
-    fetchUsers,
-    createUser,
-    updateUser,
-    deleteUser,
-  } = useUsers();
-
+  const [filterName, setFilterName] = useState('');
   const [openForm, setOpenForm] = useState(false);
   const [openConfirm, setOpenConfirm] = useState(false);
+  const [openUserInfo, setOpenUserInfo] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [isEdit, setIsEdit] = useState(false);
-  const [filterName, setFilterName] = useState('');
+  const [deleteConflicts, setDeleteConflicts] = useState([]);
+  const [futureCourses, setFutureCourses] = useState([]);
+  const [pastCourses, setPastCourses] = useState([]);
 
-  // Charger les utilisateurs au montage du composant
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
 
-  // Gestion du formulaire
   const handleOpenForm = (user = null) => {
     setSelectedUser(user);
-    setIsEdit(!!user);
     setOpenForm(true);
   };
 
   const handleCloseForm = () => {
     setOpenForm(false);
     setSelectedUser(null);
-    setIsEdit(false);
   };
 
   const handleSubmitForm = async (data) => {
     try {
-      if (isEdit) {
+      if (selectedUser) {
         await updateUser(selectedUser.id, data);
         enqueueSnackbar('Utilisateur modifié avec succès!');
       } else {
@@ -251,22 +227,67 @@ export default function UserManagementPage() {
     }
   };
 
-  // Gestion de la suppression
-  const handleOpenConfirm = (user) => {
+  // Gestion de la suppression sécurisée
+  const handleOpenConfirm = useCallback((user) => {
+    // Vérifier les permissions de suppression
+    if (!canDeleteUser(user)) {
+      enqueueSnackbar('Vous n\'avez pas les permissions pour supprimer cet utilisateur', { variant: 'error' });
+      return;
+    }
+    
     setSelectedUser(user);
     setOpenConfirm(true);
-  };
+  }, [canDeleteUser, enqueueSnackbar]);
 
   const handleCloseConfirm = () => {
     setOpenConfirm(false);
     setSelectedUser(null);
+    setDeleteConflicts([]);
+    setFutureCourses([]);
+    setPastCourses([]);
   };
 
   const handleConfirmDelete = async () => {
+    if (!selectedUser) return;
+
     try {
-      await deleteUser(selectedUser.id);
-      enqueueSnackbar('Utilisateur supprimé avec succès!');
-      handleCloseConfirm();
+      const result = await deleteUser(selectedUser.id);
+      
+      if (result.success) {
+        // Rafraîchir la liste des utilisateurs
+        await fetchUsers();
+        handleCloseConfirm();
+      } else if (result.hasLinkedCourses) {
+        // Afficher les cours liés dans le dialog
+        setDeleteConflicts([]); // Réinitialiser les conflits
+        setFutureCourses(result.data.future_courses || []);
+        setPastCourses(result.data.past_courses || []);
+      } else {
+        // Afficher les conflits empêchant la suppression
+        if (result.data?.future_courses) {
+          setDeleteConflicts(result.data.future_courses.map(course => ({
+            courseName: course.name,
+            date: new Date(course.start_time).toLocaleDateString('fr-FR'),
+            description: `Cours prévu le ${new Date(course.start_time).toLocaleDateString('fr-FR')} à ${new Date(course.start_time).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
+          })));
+        }
+      }
+    } catch (error) {
+      enqueueSnackbar(error.message || 'Erreur lors de la suppression', { variant: 'error' });
+    }
+  };
+
+  const handleConfirmDeleteWithCourses = async () => {
+    if (!selectedUser) return;
+
+    try {
+      const result = await deleteUser(selectedUser.id, true); // true = confirmer avec les cours
+      
+      if (result.success) {
+        // Rafraîchir la liste des utilisateurs
+        await fetchUsers();
+        handleCloseConfirm();
+      }
     } catch (error) {
       enqueueSnackbar(error.message || 'Erreur lors de la suppression', { variant: 'error' });
     }
@@ -275,25 +296,37 @@ export default function UserManagementPage() {
   // Gestion des actions du tableau
   const handleEditRow = useCallback((id) => {
     const user = users.find((u) => u.id === id);
-    handleOpenForm(user);
-  }, [users]);
+    if (canEditUser(user)) {
+      handleOpenForm(user);
+    } else {
+      enqueueSnackbar('Vous n\'avez pas les permissions pour modifier cet utilisateur', { variant: 'error' });
+    }
+  }, [users, canEditUser, enqueueSnackbar]);
 
   const handleViewRow = useCallback((id) => {
     const user = users.find((u) => u.id === id);
-    // Ici vous pouvez implémenter la vue détaillée
-    console.log('View user:', user);
-  }, [users]);
+    if (canViewUser(user)) {
+      setSelectedUser(user);
+      setOpenUserInfo(true);
+    } else {
+      enqueueSnackbar('Vous n\'avez pas les permissions pour voir cet utilisateur', { variant: 'error' });
+    }
+  }, [users, canViewUser, enqueueSnackbar]);
 
   const handleDeleteRow = useCallback((id) => {
     const user = users.find((u) => u.id === id);
     handleOpenConfirm(user);
-  }, [users]);
+  }, [users, handleOpenConfirm]);
 
-  // Filtrage des données
-  const filteredUsers = users.filter((user) =>
-    `${user.first_name} ${user.last_name}`.toLowerCase().includes(filterName.toLowerCase()) ||
-    user.email.toLowerCase().includes(filterName.toLowerCase())
-  );
+  // Filtrage des données selon les permissions
+  const filteredUsers = users.filter((user) => {
+    // Vérifier si l'utilisateur peut voir cet utilisateur
+    if (!canViewUser(user)) return false;
+    
+    // Appliquer le filtre de recherche
+    return `${user.first_name} ${user.last_name}`.toLowerCase().includes(filterName.toLowerCase()) ||
+           user.email.toLowerCase().includes(filterName.toLowerCase());
+  });
 
   // Préparation des données pour le tableau
   const tableData = filteredUsers.map((user) => ({
@@ -312,7 +345,12 @@ export default function UserManagementPage() {
   }));
 
   // Obtenir les colonnes selon les permissions
-  const tableColumns = getTableColumns({ canSeeActions });
+  const tableColumns = getTableColumns({ 
+    canSeeActions: canManageUsers,
+    canEdit: canEditUser,
+    canDelete: canDeleteUser,
+    canView: canViewUser,
+  });
 
   return (
     <>
@@ -336,7 +374,7 @@ export default function UserManagementPage() {
                 },
               ]}
               action={
-                getCreatableRoles().length > 0 && (
+                canManageUsers && (
                   <Button
                     variant="contained"
                     startIcon={<Iconify icon="eva:plus-fill" />}
@@ -356,7 +394,7 @@ export default function UserManagementPage() {
 
         {/* Affichage des erreurs */}
         {error && (
-          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+          <Alert severity="error" sx={{ mb: 2 }}>
             {error}
           </Alert>
         )}
@@ -394,7 +432,7 @@ export default function UserManagementPage() {
             data={tableData}
             columns={tableColumns}
             onAddNew={() => handleOpenForm()}
-            isLoading={isLoading}
+            isLoading={loading}
             isFiltered={!!filterName}
           />
         </Card>
@@ -406,22 +444,27 @@ export default function UserManagementPage() {
         onClose={handleCloseForm}
         onSubmit={handleSubmitForm}
         user={selectedUser}
-        isEdit={isEdit}
-        isLoading={isLoading}
+        isEdit={!!selectedUser}
+        isLoading={loading}
       />
 
-      {/* Dialog de confirmation */}
-      <ConfirmDialog
+      {/* Dialog de confirmation de suppression */}
+      <DeleteConfirmDialog
         open={openConfirm}
         onClose={handleCloseConfirm}
+        onConfirm={handleConfirmDelete}
+        onConfirmWithCourses={handleConfirmDeleteWithCourses}
         title="Supprimer l'utilisateur"
-        content={`Êtes-vous sûr de vouloir supprimer ${selectedUser?.first_name} ${selectedUser?.last_name} ?`}
-        action={
-          <Button variant="contained" color="error" onClick={handleConfirmDelete}>
-            Supprimer
-          </Button>
-        }
+        message={`Êtes-vous sûr de vouloir supprimer ${selectedUser?.first_name} ${selectedUser?.last_name} ?`}
+        resourceName={`${selectedUser?.first_name} ${selectedUser?.last_name}`}
+        resourceType="user"
+        isDeleting={isDeleting}
+        conflicts={deleteConflicts}
+        futureCourses={futureCourses}
+        pastCourses={pastCourses}
       />
+
+
     </>
   );
 } 

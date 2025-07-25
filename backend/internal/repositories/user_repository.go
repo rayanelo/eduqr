@@ -52,3 +52,8 @@ func (r *UserRepository) FindAll() ([]models.User, error) {
 	err := r.db.Find(&users).Error
 	return users, err
 }
+
+// DeleteUser supprime un utilisateur (soft delete)
+func (r *UserRepository) DeleteUser(id uint) error {
+	return r.db.Delete(&models.User{}, id).Error
+}

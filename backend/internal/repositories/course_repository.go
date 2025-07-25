@@ -326,3 +326,72 @@ func (r *CourseRepository) GenerateRecurringCourses(parentCourse *models.Course)
 
 	return nil
 }
+
+// GetFutureCoursesByUser récupère les cours futurs d'un utilisateur (enseignant)
+func (r *CourseRepository) GetFutureCoursesByUser(userID uint) ([]models.Course, error) {
+	var courses []models.Course
+	now := time.Now()
+
+	err := r.db.Preload("Subject").Preload("Teacher").Preload("Room").
+		Where("teacher_id = ? AND start_time > ?", userID, now).
+		Find(&courses).Error
+
+	return courses, err
+}
+
+// GetPastCoursesByUser récupère les cours passés d'un utilisateur (enseignant)
+func (r *CourseRepository) GetPastCoursesByUser(userID uint) ([]models.Course, error) {
+	var courses []models.Course
+	now := time.Now()
+
+	err := r.db.Preload("Subject").Preload("Teacher").Preload("Room").
+		Where("teacher_id = ? AND end_time < ?", userID, now).
+		Find(&courses).Error
+
+	return courses, err
+}
+
+// GetAllCoursesByUser récupère tous les cours d'un utilisateur (enseignant)
+func (r *CourseRepository) GetAllCoursesByUser(userID uint) ([]models.Course, error) {
+	var courses []models.Course
+
+	err := r.db.Preload("Subject").Preload("Teacher").Preload("Room").
+		Where("teacher_id = ?", userID).
+		Find(&courses).Error
+
+	return courses, err
+}
+
+// GetFutureCoursesByRoom récupère les cours futurs d'une salle
+func (r *CourseRepository) GetFutureCoursesByRoom(roomID uint) ([]models.Course, error) {
+	var courses []models.Course
+	now := time.Now()
+
+	err := r.db.Preload("Subject").Preload("Teacher").Preload("Room").
+		Where("room_id = ? AND start_time > ?", roomID, now).
+		Find(&courses).Error
+
+	return courses, err
+}
+
+// GetCoursesBySubject récupère tous les cours d'une matière
+func (r *CourseRepository) GetCoursesBySubject(subjectID uint) ([]models.Course, error) {
+	var courses []models.Course
+
+	err := r.db.Preload("Subject").Preload("Teacher").Preload("Room").
+		Where("subject_id = ?", subjectID).
+		Find(&courses).Error
+
+	return courses, err
+}
+
+// HasAttendance vérifie si un cours a des présences enregistrées
+func (r *CourseRepository) HasAttendance(courseID uint) (bool, error) {
+	// Pour l'instant, on retourne false car la table des présences n'existe pas encore
+	// TODO: Implémenter quand la table des présences sera créée
+	// var count int64
+	// err := r.db.Model(&models.Attendance{}).Where("course_id = ?", courseID).Count(&count).Error
+	// return count > 0, err
+
+	return false, nil
+}

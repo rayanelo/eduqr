@@ -65,4 +65,5 @@ export const eventAPI = {
     apiClient.get(EDUQR_API.endpoints.events.range, { params: { start_date: startDate, end_date: endDate } }),
 };
 
+export { apiClient };
 export default apiClient; 

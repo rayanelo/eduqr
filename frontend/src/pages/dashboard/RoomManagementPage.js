@@ -1,476 +1,324 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useSnackbar } from 'notistack';
+import { Helmet } from 'react-helmet-async';
+// @mui
 import {
-  Container,
   Card,
   Stack,
   Button,
+  Container,
   TextField,
-  Typography,
+  InputAdornment,
   Chip,
   IconButton,
   Tooltip,
-  Alert,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Box,
+  Typography,
 } from '@mui/material';
-import {
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Search as SearchIcon,
-  Clear as ClearIcon,
-  ExpandMore as ExpandMoreIcon,
-} from '@mui/icons-material';
-
-import { useSettingsContext } from '../../components/settings';
+// hooks
 import { useRooms } from '../../hooks/useRooms';
 import { usePermissions } from '../../hooks/usePermissions';
+import { useDeletion } from '../../hooks/useDeletion';
+// routes
 import { PATH_DASHBOARD } from '../../routes/paths';
-import CustomBreadcrumbs from '../../components/custom-breadcrumbs/CustomBreadcrumbs';
-import RoomFormDialog from '../../sections/rooms/RoomFormDialog';
-import { ConfirmDialog } from '../../components/confirm-dialog';
+// components
+import Iconify from '../../components/iconify';
+import { useSnackbar } from '../../components/snackbar';
+import CustomBreadcrumbs from '../../components/custom-breadcrumbs';
+import { useSettingsContext } from '../../components/settings';
+import { DataTable } from '../../components/data-table';
+import DeleteConfirmDialog from '../../components/confirm-dialog/DeleteConfirmDialog';
+
+// ----------------------------------------------------------------------
+
+// Fonction pour obtenir la couleur du statut modulaire
+const getModularColor = (isModular) => {
+  return isModular ? 'info' : 'default';
+};
+
+// Fonction pour traduire le statut modulaire
+const translateModular = (isModular) => {
+  return isModular ? 'Modulable' : 'Simple';
+};
+
+// Colonnes du tableau avec rendu personnalisé
+const getTableColumns = (permissions) => [
+  {
+    id: 'name',
+    label: 'Nom de la salle',
+    align: 'left',
+    minWidth: 200,
+    render: (value) => (
+      <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+        {value}
+      </Typography>
+    ),
+  },
+  {
+    id: 'building',
+    label: 'Bâtiment',
+    align: 'left',
+    minWidth: 150,
+  },
+  {
+    id: 'floor',
+    label: 'Étage',
+    align: 'left',
+    minWidth: 100,
+  },
+  {
+    id: 'is_modular',
+    label: 'Type',
+    align: 'center',
+    minWidth: 120,
+    render: (value) => (
+      <Chip
+        label={translateModular(value)}
+        color={getModularColor(value)}
+        size="small"
+      />
+    ),
+  },
+  {
+    id: 'parent_name',
+    label: 'Salle parente',
+    align: 'left',
+    minWidth: 150,
+    render: (value) => value || '-',
+  },
+  {
+    id: 'children_count',
+    label: 'Sous-salles',
+    align: 'center',
+    minWidth: 100,
+    render: (value) => value > 0 ? value : '-',
+  },
+  {
+    id: 'actions',
+    label: 'Actions',
+    align: 'center',
+    minWidth: 120,
+    render: (value, row) => {
+      return (
+        <Stack direction="row" spacing={1} justifyContent="center">
+          {permissions.canView && (
+            <Tooltip title="Voir">
+              <IconButton
+                size="small"
+                color="info"
+                onClick={() => row.onView(row.id)}
+              >
+                <Iconify icon="eva:eye-fill" />
+              </IconButton>
+            </Tooltip>
+          )}
+          
+          {permissions.canEdit && (
+            <Tooltip title="Modifier">
+              <IconButton
+                size="small"
+                color="primary"
+                onClick={() => row.onEdit(row.id)}
+              >
+                <Iconify icon="eva:edit-fill" />
+              </IconButton>
+            </Tooltip>
+          )}
+          
+          {permissions.canDelete && (
+            <Tooltip title="Supprimer">
+              <IconButton
+                size="small"
+                color="error"
+                onClick={() => row.onDelete(row.id)}
+              >
+                <Iconify icon="eva:trash-2-fill" />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Stack>
+      );
+    },
+  },
+];
+
+// ----------------------------------------------------------------------
 
 export default function RoomManagementPage() {
+  const themeStretch = useSettingsContext();
   const { enqueueSnackbar } = useSnackbar();
-  const settings = useSettingsContext();
-  const { canManageRooms } = usePermissions();
+  const { rooms, loading, error, fetchRooms } = useRooms();
+  const { canManageRooms, canDeleteRoom } = usePermissions();
+  const { deleteRoom, isDeleting } = useDeletion();
 
-  // Room management
-  const {
-    rooms,
-    loading: isLoading,
-    error,
-    fetchRooms,
-    deleteRoom,
-  } = useRooms();
-
-  // Local state
   const [filterName, setFilterName] = useState('');
-  const [filterBuilding, setFilterBuilding] = useState('');
-  const [filterFloor, setFilterFloor] = useState('');
-  const [openForm, setOpenForm] = useState(false);
+  const [openConfirm, setOpenConfirm] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
-  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
-  const [roomToDelete, setRoomToDelete] = useState(null);
+  const [deleteConflicts, setDeleteConflicts] = useState([]);
 
-  // Load rooms on component mount
-  const loadRooms = useCallback(() => {
+  useEffect(() => {
     fetchRooms();
   }, [fetchRooms]);
 
-  useEffect(() => {
-    loadRooms();
-  }, [loadRooms]);
-
-
-
-  // Filter handlers
-  const handleFilterName = (event) => {
-    setFilterName(event.target.value);
-  };
-
-  const handleFilterBuilding = (event) => {
-    setFilterBuilding(event.target.value);
-  };
-
-  const handleFilterFloor = (event) => {
-    setFilterFloor(event.target.value);
-  };
-
-  const handleSearch = () => {
-    fetchRooms();
-  };
-
-  const handleResetFilters = () => {
-    setFilterName('');
-    setFilterBuilding('');
-    setFilterFloor('');
-    fetchRooms();
-  };
-
-  // Form handlers
-  const handleOpenForm = (room = null) => {
+  // Gestion de la suppression sécurisée
+  const handleOpenConfirm = useCallback((room) => {
+    // Vérifier les permissions de suppression
+    if (!canDeleteRoom()) {
+      enqueueSnackbar('Vous n\'avez pas les permissions pour supprimer des salles', { variant: 'error' });
+      return;
+    }
+    
     setSelectedRoom(room);
-    setOpenForm(true);
-  };
+    setOpenConfirm(true);
+  }, [canDeleteRoom, enqueueSnackbar]);
 
-  const handleCloseForm = () => {
-    setOpenForm(false);
+  const handleCloseConfirm = () => {
+    setOpenConfirm(false);
     setSelectedRoom(null);
-  };
-
-  const handleFormSuccess = () => {
-    handleCloseForm();
-    loadRooms();
-    enqueueSnackbar(
-      selectedRoom ? 'Salle modifiée avec succès' : 'Salle créée avec succès',
-      { variant: 'success' }
-    );
-  };
-
-  // Delete handlers
-  const handleDeleteClick = (room) => {
-    setRoomToDelete(room);
-    setOpenDeleteDialog(true);
+    setDeleteConflicts([]);
   };
 
   const handleConfirmDelete = async () => {
-    if (!roomToDelete) return;
+    if (!selectedRoom) return;
 
     try {
-      await deleteRoom(roomToDelete.id);
-      setOpenDeleteDialog(false);
-      setRoomToDelete(null);
-      loadRooms();
-      enqueueSnackbar('Salle supprimée avec succès', { variant: 'success' });
+      const result = await deleteRoom(selectedRoom.id);
+      
+      if (result.success) {
+        // Rafraîchir la liste des salles
+        await fetchRooms();
+        handleCloseConfirm();
+      } else {
+        // Afficher les conflits empêchant la suppression
+        if (result.data?.future_courses) {
+          setDeleteConflicts(result.data.future_courses.map(course => ({
+            courseName: course.name,
+            date: new Date(course.start_time).toLocaleDateString('fr-FR'),
+            description: `Cours prévu le ${new Date(course.start_time).toLocaleDateString('fr-FR')} à ${new Date(course.start_time).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
+          })));
+        }
+      }
     } catch (error) {
-      enqueueSnackbar('Erreur lors de la suppression', { variant: 'error' });
+      enqueueSnackbar(error.message || 'Erreur lors de la suppression', { variant: 'error' });
     }
   };
 
-  // Filter rooms based on search criteria
-  const filteredRooms = rooms.filter((room) => {
-    const matchesName = !filterName || room.name.toLowerCase().includes(filterName.toLowerCase());
-    const matchesBuilding = !filterBuilding || (room.building && room.building.toLowerCase().includes(filterBuilding.toLowerCase()));
-    const matchesFloor = !filterFloor || (room.floor && room.floor.toLowerCase().includes(filterFloor.toLowerCase()));
-    return matchesName && matchesBuilding && matchesFloor;
+  // Gestion des actions du tableau
+  const handleEditRow = useCallback((id) => {
+    // TODO: Implémenter la modification de salle
+    console.log('Edit room:', id);
+  }, []);
+
+  const handleViewRow = useCallback((id) => {
+    // TODO: Implémenter la vue détaillée de salle
+    console.log('View room:', id);
+  }, []);
+
+  const handleDeleteRow = useCallback((id) => {
+    const room = rooms.find((r) => r.id === id);
+    handleOpenConfirm(room);
+  }, [rooms, handleOpenConfirm]);
+
+  // Filtrage des données
+  const filteredRooms = rooms.filter((room) =>
+    room.name.toLowerCase().includes(filterName.toLowerCase()) ||
+    room.building.toLowerCase().includes(filterName.toLowerCase())
+  );
+
+  // Préparation des données pour le tableau
+  const tableData = filteredRooms.map((room) => ({
+    id: room.id,
+    name: room.name,
+    building: room.building,
+    floor: room.floor,
+    is_modular: room.is_modular,
+    parent_name: room.parent?.name || null,
+    children_count: room.children?.length || 0,
+    // Ajout des fonctions d'action pour chaque ligne
+    onEdit: handleEditRow,
+    onView: handleViewRow,
+    onDelete: handleDeleteRow,
+  }));
+
+  // Obtenir les colonnes selon les permissions
+  const tableColumns = getTableColumns({ 
+    canView: canManageRooms,
+    canEdit: canManageRooms,
+    canDelete: canDeleteRoom,
   });
 
-  // Get only main rooms (no parent)
-  const mainRooms = filteredRooms.filter(room => !room.parent_id);
-
-
-
-  // const getSubRooms = (parentId) => {
-  //   return filteredRooms.filter(room => room.parent_id === parentId);
-  // };
-
-  if (isLoading) {
-    return (
-      <Container maxWidth={settings.themeStretch ? false : 'xl'}>
-        <Typography>Chargement...</Typography>
-      </Container>
-    );
-  }
-
   return (
-    <Container maxWidth={settings.themeStretch ? false : 'xl'}>
-      <CustomBreadcrumbs
-        heading="Gestion des salles"
-        links={[
-          { name: 'Dashboard', href: PATH_DASHBOARD.root },
-          { name: 'Salles' },
-        ]}
-        action={
-          canManageRooms && (
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => handleOpenForm()}
-            >
-              Nouvelle salle
-            </Button>
-          )
-        }
-      />
+    <>
+      <Helmet>
+        <title> Gestion des salles | EduQR</title>
+      </Helmet>
 
-      <Card sx={{ mt: 3 }}>
-        <Stack spacing={3} sx={{ p: 3 }}>
-          {/* Search and filters */}
-          <Card variant="outlined" sx={{ p: 2, mb: 2 }}>
-            <Stack spacing={2}>
-              <Typography variant="subtitle2" color="text.secondary">
-                Filtres de recherche
-              </Typography>
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                <TextField
-                  size="small"
-                  label="Nom de la salle"
-                  placeholder="Rechercher par nom..."
-                  value={filterName}
-                  onChange={handleFilterName}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                  sx={{ minWidth: 200 }}
-                />
-                <TextField
-                  size="small"
-                  label="Bâtiment"
-                  placeholder="Filtrer par bâtiment..."
-                  value={filterBuilding}
-                  onChange={handleFilterBuilding}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                  sx={{ minWidth: 150 }}
-                />
-                <TextField
-                  size="small"
-                  label="Étage"
-                  placeholder="Filtrer par étage..."
-                  value={filterFloor}
-                  onChange={handleFilterFloor}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                  sx={{ minWidth: 120 }}
-                />
-                <Stack direction="row" spacing={1}>
-                  <Button
-                    variant="contained"
-                    size="small"
-                    startIcon={<SearchIcon />}
-                    onClick={handleSearch}
-                  >
-                    Rechercher
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    startIcon={<ClearIcon />}
-                    onClick={handleResetFilters}
-                  >
-                    Effacer
-                  </Button>
-                </Stack>
-              </Stack>
-            </Stack>
+      <Container maxWidth={themeStretch ? false : 'xl'}>
+        <Stack spacing={3}>
+          {/* Section header */}
+          <CustomBreadcrumbs
+            heading="Gestion des salles"
+            links={[
+              {
+                name: 'Dashboard',
+                href: PATH_DASHBOARD.root,
+              },
+              {
+                name: 'Salles',
+              },
+            ]}
+            action={
+              canManageRooms && (
+                <Button
+                  variant="contained"
+                  startIcon={<Iconify icon="eva:plus-fill" />}
+                  onClick={() => console.log('Create room')}
+                >
+                  Nouvelle salle
+                </Button>
+              )
+            }
+          />
+
+          {/* Filtres */}
+          <Card sx={{ p: 2 }}>
+            <TextField
+              fullWidth
+              placeholder="Rechercher une salle..."
+              value={filterName}
+              onChange={(e) => setFilterName(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
+                  </InputAdornment>
+                ),
+              }}
+            />
           </Card>
 
-          {/* Error message */}
-          {error && (
-            <Alert severity="error">
-              {error}
-            </Alert>
-          )}
-
-          {/* Rooms list with cards */}
-          <Stack spacing={2}>
-            {mainRooms.length === 0 ? (
-              <Card sx={{ p: 4, textAlign: 'center' }}>
-                <Typography variant="h6" color="text.secondary" gutterBottom>
-                  Aucune salle trouvée
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  Il n'y a pas encore de salles dans cette liste. Commencez par ajouter une nouvelle salle.
-                </Typography>
-                {canManageRooms && (
-                  <Button
-                    variant="contained"
-                    startIcon={<AddIcon />}
-                    onClick={() => handleOpenForm()}
-                  >
-                    Ajouter la première salle
-                  </Button>
-                )}
-              </Card>
-            ) : (
-              <Stack spacing={1}>
-                {mainRooms.map((room) => (
-                  <Accordion key={room.id} variant="outlined" sx={{ '&:before': { display: 'none' } }}>
-                    <AccordionSummary 
-                      expandIcon={null}
-                      sx={{ 
-                        '& .MuiAccordionSummary-content': { 
-                          margin: 0,
-                          alignItems: 'center'
-                        }
-                      }}
-                    >
-                      <Stack direction="row" alignItems="center" spacing={2} sx={{ flexGrow: 1 }}>
-                        {room.is_modular && room.children?.length > 0 && (
-                          <ExpandMoreIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
-                        )}
-                        <Tooltip title={room.name} placement="top">
-                          <Typography 
-                            variant="subtitle1" 
-                            sx={{ 
-                              fontWeight: 'bold', 
-                              width: 180,
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap'
-                            }}
-                          >
-                            {room.name}
-                          </Typography>
-                        </Tooltip>
-                        
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexGrow: 1 }}>
-                          <Chip 
-                            label={room.is_modular ? "Principale modulable" : "Principale"} 
-                            color={room.is_modular ? "success" : "default"}
-                            size="small"
-                            sx={{ width: 140 }}
-                          />
-                          
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: 160 }}>
-                            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-                              Bâtiment:
-                            </Typography>
-                            <Typography variant="body2" sx={{ fontWeight: 'medium', fontSize: '0.75rem' }}>
-                              {room.building || 'Non spécifié'}
-                            </Typography>
-                          </Box>
-                          
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: 120 }}>
-                            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-                              Étage:
-                            </Typography>
-                            <Typography variant="body2" sx={{ fontWeight: 'medium', fontSize: '0.75rem' }}>
-                              {room.floor || 'Non spécifié'}
-                            </Typography>
-                          </Box>
-                          
-                          {room.is_modular && (
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: 100 }}>
-                              <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-                                Sous-salles:
-                              </Typography>
-                              <Typography variant="body2" sx={{ fontWeight: 'medium', fontSize: '0.75rem' }}>
-                                {room.children?.length || 0}
-                              </Typography>
-                            </Box>
-                          )}
-                        </Box>
-                      </Stack>
-                      
-                      <Stack direction="row" spacing={1} sx={{ ml: 2 }}>
-                        <Tooltip title="Modifier">
-                          <IconButton
-                            size="small"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleOpenForm(room);
-                            }}
-                            disabled={!canManageRooms}
-                          >
-                            <EditIcon />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Supprimer">
-                          <IconButton
-                            size="small"
-                            color="error"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteClick(room);
-                            }}
-                            disabled={!canManageRooms}
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        </Tooltip>
-                      </Stack>
-                    </AccordionSummary>
-                    
-                    {/* Sub-rooms section */}
-                    {room.is_modular && room.children && room.children.length > 0 && (
-                      <AccordionDetails sx={{ pt: 0, pb: 2 }}>
-                        <Stack spacing={1}>
-                          {room.children.map((subRoom) => (
-                            <Card key={subRoom.id} variant="outlined" sx={{ bgcolor: 'grey.50' }}>
-                              <Stack
-                                direction="row"
-                                alignItems="center"
-                                spacing={2}
-                                sx={{ p: 1.5 }}
-                              >
-                                <Stack direction="row" alignItems="center" spacing={2} sx={{ flexGrow: 1 }}>
-                                  <Tooltip title={subRoom.name} placement="top">
-                                    <Typography 
-                                      variant="body2" 
-                                      sx={{ 
-                                        fontWeight: 'medium', 
-                                        width: 120,
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis',
-                                        whiteSpace: 'nowrap'
-                                      }}
-                                    >
-                                      {subRoom.name}
-                                    </Typography>
-                                  </Tooltip>
-                                  
-                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexGrow: 1 }}>
-                                    <Chip 
-                                      label="Sous-salle" 
-                                      color="info"
-                                      size="small"
-                                      sx={{ width: 100 }}
-                                    />
-                                    
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: 160 }}>
-                                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-                                        Bâtiment:
-                                      </Typography>
-                                      <Typography variant="body2" sx={{ fontWeight: 'medium', fontSize: '0.75rem' }}>
-                                        {subRoom.building || 'Non spécifié'}
-                                      </Typography>
-                                    </Box>
-                                    
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: 120 }}>
-                                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-                                        Étage:
-                                      </Typography>
-                                      <Typography variant="body2" sx={{ fontWeight: 'medium', fontSize: '0.75rem' }}>
-                                        {subRoom.floor || 'Non spécifié'}
-                                      </Typography>
-                                    </Box>
-                                  </Box>
-                                </Stack>
-                                
-                                <Stack direction="row" spacing={0.5}>
-                                  <Tooltip title="Modifier">
-                                    <IconButton
-                                      size="small"
-                                      onClick={() => handleOpenForm(subRoom)}
-                                      disabled={!canManageRooms}
-                                    >
-                                      <EditIcon fontSize="small" />
-                                    </IconButton>
-                                  </Tooltip>
-                                  <Tooltip title="Supprimer">
-                                    <IconButton
-                                      size="small"
-                                      color="error"
-                                      onClick={() => handleDeleteClick(subRoom)}
-                                      disabled={!canManageRooms}
-                                    >
-                                      <DeleteIcon fontSize="small" />
-                                    </IconButton>
-                                  </Tooltip>
-                                </Stack>
-                              </Stack>
-                            </Card>
-                          ))}
-                        </Stack>
-                      </AccordionDetails>
-                    )}
-                  </Accordion>
-                ))}
-              </Stack>
-            )}
-          </Stack>
+          {/* Tableau des salles */}
+          <DataTable
+            title="Liste des salles"
+            data={tableData}
+            columns={tableColumns}
+            loading={loading}
+            error={error}
+            onRefresh={fetchRooms}
+          />
         </Stack>
-      </Card>
 
-      {/* Room form dialog */}
-      <RoomFormDialog
-        open={openForm}
-        onClose={handleCloseForm}
-        onSuccess={handleFormSuccess}
-        room={selectedRoom}
-      />
-
-      {/* Delete confirmation dialog */}
-      <ConfirmDialog
-        open={openDeleteDialog}
-        onClose={() => setOpenDeleteDialog(false)}
-        onConfirm={handleConfirmDelete}
-        title="Confirmer la suppression"
-        content={`Êtes-vous sûr de vouloir supprimer la salle "${roomToDelete?.name}" ? Cette action est irréversible.`}
-        confirmText="Supprimer"
-        cancelText="Annuler"
-      />
-    </Container>
+        {/* Dialog de confirmation de suppression */}
+        <DeleteConfirmDialog
+          open={openConfirm}
+          onClose={handleCloseConfirm}
+          onConfirm={handleConfirmDelete}
+          title="Supprimer la salle"
+          message={`Êtes-vous sûr de vouloir supprimer la salle "${selectedRoom?.name}" ?`}
+          resourceName={selectedRoom?.name}
+          resourceType="room"
+          isDeleting={isDeleting}
+          conflicts={deleteConflicts}
+        />
+      </Container>
+    </>
   );
 } 

@@ -105,3 +105,10 @@ func (r *RoomRepository) GetModularRooms() ([]models.Room, error) {
 	err := r.db.Where("is_modular = ? AND parent_id IS NULL", true).Find(&rooms).Error
 	return rooms, err
 }
+
+// GetChildRooms récupère les salles enfants d'une salle modulable
+func (r *RoomRepository) GetChildRooms(parentID uint) ([]models.Room, error) {
+	var rooms []models.Room
+	err := r.db.Where("parent_id = ?", parentID).Find(&rooms).Error
+	return rooms, err
+}

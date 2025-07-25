@@ -5,6 +5,10 @@ import (
 	"eduqr-backend/internal/middlewares"
 	"time"
 
+	"eduqr-backend/internal/database"
+	"eduqr-backend/internal/repositories"
+	"eduqr-backend/internal/services"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
@@ -84,7 +88,6 @@ func (r *Router) SetupRoutes() *gin.Engine {
 			// Parameterized routes with role-based permissions
 			users.GET("/:id", r.userController.GetUserByID)           // View permissions based on role
 			users.PUT("/:id", r.userController.UpdateUser)            // Manage permissions based on role
-			users.DELETE("/:id", r.userController.DeleteUser)         // Manage permissions based on role
 			users.PATCH("/:id/role", r.userController.UpdateUserRole) // Manage permissions based on role
 		}
 
@@ -110,7 +113,6 @@ func (r *Router) SetupRoutes() *gin.Engine {
 			rooms.POST("", r.roomController.CreateRoom)
 			rooms.GET("/:id", r.roomController.GetRoomByID)
 			rooms.PUT("/:id", r.roomController.UpdateRoom)
-			rooms.DELETE("/:id", r.roomController.DeleteRoom)
 		}
 
 		// Subject routes (admin authentication required)
@@ -122,7 +124,6 @@ func (r *Router) SetupRoutes() *gin.Engine {
 			subjects.POST("", r.subjectController.CreateSubject)
 			subjects.GET("/:id", r.subjectController.GetSubjectByID)
 			subjects.PUT("/:id", r.subjectController.UpdateSubject)
-			subjects.DELETE("/:id", r.subjectController.DeleteSubject)
 		}
 
 		// Course routes (admin authentication required)
@@ -134,13 +135,32 @@ func (r *Router) SetupRoutes() *gin.Engine {
 			courses.POST("", r.courseController.CreateCourse)
 			courses.GET("/:id", r.courseController.GetCourseByID)
 			courses.PUT("/:id", r.courseController.UpdateCourse)
-			courses.DELETE("/:id", r.courseController.DeleteCourse)
 			courses.GET("/by-date-range", r.courseController.GetCoursesByDateRange)
 			courses.GET("/by-room/:roomId", r.courseController.GetCoursesByRoom)
 			courses.GET("/by-teacher/:teacherId", r.courseController.GetCoursesByTeacher)
 			courses.POST("/check-conflicts", r.courseController.CheckConflicts)
 			courses.POST("/:id/check-conflicts", r.courseController.CheckConflictsForUpdate)
 		}
+
+		// Routes de suppression sécurisées
+		deletionController := controllers.NewDeletionController(services.NewDeletionService(
+			repositories.NewUserRepository(),
+			repositories.NewCourseRepository(database.GetDB()),
+			repositories.NewRoomRepository(database.GetDB()),
+			repositories.NewSubjectRepository(),
+		))
+
+		// Suppression d'utilisateurs (Admin/Super Admin seulement)
+		v1.DELETE("/admin/users/:id", r.authMiddleware.AuthMiddleware(), r.authMiddleware.CanDeleteMiddleware("user"), deletionController.DeleteUser)
+
+		// Suppression de salles (Admin/Super Admin seulement)
+		v1.DELETE("/admin/rooms/:id", r.authMiddleware.AuthMiddleware(), r.authMiddleware.CanDeleteMiddleware("room"), deletionController.DeleteRoom)
+
+		// Suppression de matières (Admin/Super Admin seulement)
+		v1.DELETE("/admin/subjects/:id", r.authMiddleware.AuthMiddleware(), r.authMiddleware.CanDeleteMiddleware("subject"), deletionController.DeleteSubject)
+
+		// Suppression de cours (Admin/Super Admin seulement)
+		v1.DELETE("/admin/courses/:id", r.authMiddleware.AuthMiddleware(), r.authMiddleware.CanDeleteMiddleware("course"), deletionController.DeleteCourse)
 	}
 
 	return router

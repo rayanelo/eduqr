@@ -1,12 +1,13 @@
 import { useState, useCallback } from 'react';
-import apiClient from '../utils/api';
+import { useSnackbar } from 'notistack';
+import { apiClient } from '../utils/api';
 
 export const useRooms = () => {
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const { enqueueSnackbar } = useSnackbar();
 
-  // Récupérer toutes les salles
   const fetchRooms = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -14,99 +15,59 @@ export const useRooms = () => {
       const response = await apiClient.get('/api/v1/admin/rooms');
       setRooms(response.data.data || []);
     } catch (err) {
-      setError(err.response?.data?.error || 'Erreur lors de la récupération des salles');
+      setError(err.response?.data?.error || 'Erreur lors du chargement des salles');
+      enqueueSnackbar('Erreur lors du chargement des salles', { variant: 'error' });
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [enqueueSnackbar]);
 
-  // Récupérer une salle par ID
-  const getRoomById = useCallback(async (id) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await apiClient.get(`/api/v1/admin/rooms/${id}`);
-      return response.data.data;
-    } catch (err) {
-      setError(err.response?.data?.error || 'Erreur lors de la récupération de la salle');
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // Récupérer les salles modulables
-  const getModularRooms = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await apiClient.get('/api/v1/admin/rooms/modular');
-      return response.data.data || [];
-    } catch (err) {
-      setError(err.response?.data?.error || 'Erreur lors de la récupération des salles modulables');
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // Créer une salle
   const createRoom = useCallback(async (roomData) => {
-    setLoading(true);
-    setError(null);
     try {
       const response = await apiClient.post('/api/v1/admin/rooms', roomData);
-      await fetchRooms(); // Rafraîchir la liste
-      return response.data.data;
+      enqueueSnackbar('Salle créée avec succès', { variant: 'success' });
+      await fetchRooms();
+      return response.data;
     } catch (err) {
-      setError(err.response?.data?.error || 'Erreur lors de la création de la salle');
-      throw err;
-    } finally {
-      setLoading(false);
+      const errorMessage = err.response?.data?.error || 'Erreur lors de la création de la salle';
+      enqueueSnackbar(errorMessage, { variant: 'error' });
+      throw new Error(errorMessage);
     }
-  }, [fetchRooms]);
+  }, [fetchRooms, enqueueSnackbar]);
 
-  // Mettre à jour une salle
   const updateRoom = useCallback(async (id, roomData) => {
-    setLoading(true);
-    setError(null);
     try {
       const response = await apiClient.put(`/api/v1/admin/rooms/${id}`, roomData);
-      await fetchRooms(); // Rafraîchir la liste
-      return response.data.data;
+      enqueueSnackbar('Salle modifiée avec succès', { variant: 'success' });
+      await fetchRooms();
+      return response.data;
     } catch (err) {
-      setError(err.response?.data?.error || 'Erreur lors de la mise à jour de la salle');
-      throw err;
-    } finally {
-      setLoading(false);
+      const errorMessage = err.response?.data?.error || 'Erreur lors de la modification de la salle';
+      enqueueSnackbar(errorMessage, { variant: 'error' });
+      throw new Error(errorMessage);
     }
-  }, [fetchRooms]);
+  }, [fetchRooms, enqueueSnackbar]);
 
-  // Supprimer une salle
   const deleteRoom = useCallback(async (id) => {
-    setLoading(true);
-    setError(null);
     try {
-      await apiClient.delete(`/api/v1/admin/rooms/${id}`);
-      await fetchRooms(); // Rafraîchir la liste
+      const response = await apiClient.delete(`/api/v1/admin/rooms/${id}`);
+      enqueueSnackbar('Salle supprimée avec succès', { variant: 'success' });
+      await fetchRooms();
+      return response.data;
     } catch (err) {
-      setError(err.response?.data?.error || 'Erreur lors de la suppression de la salle');
-      throw err;
-    } finally {
-      setLoading(false);
+      const errorMessage = err.response?.data?.error || 'Erreur lors de la suppression de la salle';
+      enqueueSnackbar(errorMessage, { variant: 'error' });
+      throw new Error(errorMessage);
     }
-  }, [fetchRooms]);
+  }, [fetchRooms, enqueueSnackbar]);
 
   return {
     rooms,
     loading,
     error,
-    setError,
     fetchRooms,
-    getRoomById,
-    getModularRooms,
     createRoom,
     updateRoom,
-    deleteRoom
+    deleteRoom,
   };
 }; 

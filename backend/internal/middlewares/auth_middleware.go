@@ -220,3 +220,84 @@ func (m *AuthMiddleware) OptionalAuthMiddleware() gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+// CanDeleteMiddleware checks if the current user can delete the target resource
+func (m *AuthMiddleware) CanDeleteMiddleware(resourceType string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userRole, exists := c.Get("user_role")
+		if !exists {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+			c.Abort()
+			return
+		}
+
+		// Seuls les Admins et Super Admins peuvent supprimer
+		if userRole != models.RoleAdmin && userRole != models.RoleSuperAdmin {
+			c.JSON(http.StatusForbidden, gin.H{"error": "insufficient permissions for deletion"})
+			c.Abort()
+			return
+		}
+
+		// Pour les suppressions d'utilisateurs, vérifier les règles spéciales
+		if resourceType == "user" {
+			// Get target user ID from URL parameter
+			idStr := c.Param("id")
+			if idStr == "" {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "user ID required"})
+				c.Abort()
+				return
+			}
+
+			id, err := strconv.ParseUint(idStr, 10, 32)
+			if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user ID"})
+				c.Abort()
+				return
+			}
+
+			// Get current user ID
+			currentUserID, exists := c.Get("user_id")
+			if !exists {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+				c.Abort()
+				return
+			}
+
+			// Un utilisateur ne peut pas se supprimer lui-même
+			if currentUserID.(uint) == uint(id) {
+				c.JSON(http.StatusForbidden, gin.H{"error": "cannot delete your own account"})
+				c.Abort()
+				return
+			}
+
+			// Set target user ID in context for controller to check specific permissions
+			c.Set("target_user_id", uint(id))
+		}
+
+		// Set resource type in context
+		c.Set("resource_type", resourceType)
+		c.Set("current_user_role", userRole.(string))
+		c.Next()
+	}
+}
+
+// CanDeleteAdminMiddleware checks if the current user can delete an admin
+func (m *AuthMiddleware) CanDeleteAdminMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userRole, exists := c.Get("user_role")
+		if !exists {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+			c.Abort()
+			return
+		}
+
+		// Seul le Super Admin peut supprimer un Admin
+		if userRole != models.RoleSuperAdmin {
+			c.JSON(http.StatusForbidden, gin.H{"error": "only super admin can delete admin accounts"})
+			c.Abort()
+			return
+		}
+
+		c.Next()
+	}
+}
