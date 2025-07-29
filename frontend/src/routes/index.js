@@ -24,6 +24,9 @@ import AbsenceManagementPage from '../pages/dashboard/AbsenceManagementPage';
 import TeacherAbsencePage from '../pages/dashboard/TeacherAbsencePage';
 import AdminAbsencePage from '../pages/dashboard/AdminAbsencePage';
 
+import QRCodeScannerPage from '../pages/dashboard/QRCodeScannerPage';
+import QRCodeByRoomPage from '../pages/dashboard/QRCodeByRoomPage';
+
 // ----------------------------------------------------------------------
 
 export default function Router() {
@@ -47,6 +50,9 @@ export default function Router() {
         { path: 'my-absences', element: <AbsenceManagementPage /> },
         { path: 'teacher-absences', element: <TeacherAbsencePage /> },
         { path: 'admin-absences', element: <AdminAbsencePage /> },
+
+        { path: 'qr-scanner', element: <QRCodeScannerPage /> },
+        { path: 'qr-by-room', element: <QRCodeByRoomPage /> },
         { path: 'five', element: <PageFive /> },
         { path: 'six', element: <PageSix /> },
       ],

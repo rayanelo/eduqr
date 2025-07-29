@@ -31,7 +31,7 @@ func main() {
 	defer database.CloseDB()
 
 	// Auto migrate models
-	if err := database.AutoMigrate(&models.User{}, &models.Event{}, &models.Room{}, &models.Subject{}, &models.Course{}, &models.AuditLog{}, &models.Absence{}); err != nil {
+	if err := database.AutoMigrate(&models.User{}, &models.Event{}, &models.Room{}, &models.Subject{}, &models.Course{}, &models.AuditLog{}, &models.Absence{}, &models.Presence{}); err != nil {
 		log.Fatalf("Failed to auto migrate: %v", err)
 	}
 
@@ -43,6 +43,7 @@ func main() {
 	courseRepo := repositories.NewCourseRepository(database.GetDB())
 	auditLogRepo := repositories.NewAuditLogRepository()
 	absenceRepo := repositories.NewAbsenceRepository(database.GetDB())
+	presenceRepo := repositories.NewPresenceRepository(database.GetDB())
 
 	// Parse JWT expiration
 	jwtExpiration, err := time.ParseDuration(cfg.JWT.Expiration)
@@ -58,6 +59,7 @@ func main() {
 	courseService := services.NewCourseService(courseRepo, subjectRepo, userRepo, roomRepo)
 	auditLogService := services.NewAuditLogService(auditLogRepo)
 	absenceService := services.NewAbsenceService(absenceRepo, courseRepo, userRepo)
+	presenceService := services.NewPresenceService(presenceRepo, courseRepo, userRepo)
 
 	// Initialize controllers
 	userController := controllers.NewUserController(userService)
@@ -67,13 +69,14 @@ func main() {
 	courseController := controllers.NewCourseController(courseService)
 	auditLogController := controllers.NewAuditLogController(auditLogService)
 	absenceController := controllers.NewAbsenceController(absenceService)
+	presenceController := controllers.NewPresenceController(presenceService)
 
 	// Initialize middleware
 	authMiddleware := middlewares.NewAuthMiddleware(cfg.JWT.Secret)
 	auditMiddleware := middlewares.NewAuditMiddleware(auditLogService)
 
 	// Initialize router
-	router := routes.NewRouter(userController, eventController, roomController, subjectController, courseController, auditLogController, absenceController, authMiddleware, auditMiddleware)
+	router := routes.NewRouter(userController, eventController, roomController, subjectController, courseController, auditLogController, absenceController, presenceController, authMiddleware, auditMiddleware)
 	app := router.SetupRoutes()
 
 	// Create server

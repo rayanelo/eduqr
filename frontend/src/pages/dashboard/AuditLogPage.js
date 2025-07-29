@@ -12,6 +12,8 @@ import { useSnackbar } from 'notistack';
 
 import { useAuditLogs } from '../../hooks/useAuditLogs';
 import { usePermissions } from '../../hooks/usePermissions';
+import { useContext } from 'react';
+import { AuthContext } from '../../auth/JwtContext';
 
 import Iconify from '../../components/iconify';
 import { useSettingsContext } from '../../components/settings';
@@ -25,6 +27,7 @@ export default function AuditLogPage() {
   const { themeStretch } = useSettingsContext();
   const { enqueueSnackbar } = useSnackbar();
   const { canAccessAuditLogs } = usePermissions();
+  const { user } = useContext(AuthContext);
 
   const {
     logs,
@@ -68,8 +71,16 @@ export default function AuditLogPage() {
 
   // Charger les données initiales
   useEffect(() => {
+    console.log('🔍 Debug AuditLogPage:', {
+      canAccessAuditLogs,
+      user: user,
+      filters
+    });
+    
     if (canAccessAuditLogs) {
       loadData();
+    } else {
+      console.log('❌ Accès refusé aux logs d\'audit');
     }
   }, [canAccessAuditLogs, loadData]);
 

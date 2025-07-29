@@ -57,7 +57,7 @@ type CreateAbsenceRequest struct {
 // ReviewAbsenceRequest pour la validation/rejet d'une absence
 type ReviewAbsenceRequest struct {
 	Status        string `json:"status" binding:"required,oneof=approved rejected"`
-	ReviewComment string `json:"review_comment" binding:"required"`
+	ReviewComment string `json:"review_comment"` // Commentaire optionnel
 }
 
 // AbsenceFilterRequest pour le filtrage des absences

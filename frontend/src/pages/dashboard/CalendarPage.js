@@ -69,7 +69,10 @@ export default function CalendarPage() {
 
   // Suppression du filtre de couleur
 
-  const [view, setView] = useState(isDesktop ? 'dayGridMonth' : 'listWeek');
+  const [view, setView] = useState(() => {
+    // Initialiser la vue selon la taille de l'écran
+    return isDesktop ? 'timeGridWeek' : 'listWeek';
+  });
 
   // Configuration du calendrier selon la langue
   const calendarConfig = useCalendarConfig();
@@ -79,7 +82,8 @@ export default function CalendarPage() {
     if (calendarEl) {
       const calendarApi = calendarEl.getApi();
 
-      const newView = isDesktop ? 'dayGridMonth' : 'listWeek';
+      // Utiliser la vue semaine par défaut, sauf sur mobile où on utilise la liste
+      const newView = isDesktop ? 'timeGridWeek' : 'listWeek';
       calendarApi.changeView(newView);
       setView(newView);
     }
@@ -372,12 +376,8 @@ export default function CalendarPage() {
 }
 
 function applyFilter({ inputData, filterStartDate, filterEndDate, isError }) {
-  const stabilizedThis = inputData.map((el, index) => [el, index]);
-
-  inputData = stabilizedThis.map((el) => el[0]);
-
   if (filterStartDate && filterEndDate && !isError) {
-    inputData = inputData.filter(
+    return inputData.filter(
       (event) =>
         fTimestamp(event.start) >= fTimestamp(filterStartDate) &&
         fTimestamp(event.end) <= fTimestamp(filterEndDate)

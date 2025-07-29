@@ -103,6 +103,21 @@ func (r *CourseRepository) GetCoursesByRoom(roomID uint) ([]models.Course, error
 	return courses, err
 }
 
+// GetCoursesByRoomAndDate récupère les cours d'une salle pour une date spécifique
+func (r *CourseRepository) GetCoursesByRoomAndDate(roomID uint, targetDate time.Time) ([]models.Course, error) {
+	var courses []models.Course
+
+	// Calculer le début et la fin de la journée
+	startOfDay := time.Date(targetDate.Year(), targetDate.Month(), targetDate.Day(), 0, 0, 0, 0, targetDate.Location())
+	endOfDay := startOfDay.Add(24 * time.Hour)
+
+	err := r.db.Preload("Subject").Preload("Teacher").Preload("Room").
+		Where("room_id = ? AND start_time >= ? AND start_time < ?", roomID, startOfDay, endOfDay).
+		Order("start_time ASC").
+		Find(&courses).Error
+	return courses, err
+}
+
 // GetCoursesByTeacher récupère les cours d'un enseignant
 func (r *CourseRepository) GetCoursesByTeacher(teacherID uint) ([]models.Course, error) {
 	var courses []models.Course

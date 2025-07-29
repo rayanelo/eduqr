@@ -1,6 +1,6 @@
 import { useState } from 'react';
 //
-import SvgColor from '../../svg-color';
+import Iconify from '../../iconify';
 import { StyledCard } from '../styles';
 
 // ----------------------------------------------------------------------
@@ -34,8 +34,8 @@ export default function FullScreenOptions() {
     >
       {fullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
 
-      <SvgColor
-        src={`/assets/icons/setting/${fullscreen ? 'ic_exit_full_screen' : 'ic_full_screen'}.svg`}
+      <Iconify
+        icon={fullscreen ? 'solar:exit-full-screen-linear' : 'solar:full-screen-linear'}
       />
     </StyledCard>
   );

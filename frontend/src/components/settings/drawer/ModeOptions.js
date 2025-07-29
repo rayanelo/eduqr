@@ -1,7 +1,7 @@
 // @mui
 import { RadioGroup } from '@mui/material';
 //
-import SvgColor from '../../svg-color';
+import Iconify from '../../iconify';
 import { useSettingsContext } from '../SettingsContext';
 import { StyledCard, StyledWrap, MaskControl } from '../styles';
 
@@ -17,8 +17,8 @@ export default function ModeOptions() {
       <StyledWrap>
         {OPTIONS.map((mode) => (
           <StyledCard key={mode} selected={themeMode === mode}>
-            <SvgColor
-              src={`/assets/icons/setting/${mode === 'light' ? 'ic_sun' : 'ic_moon'}.svg`}
+            <Iconify
+              icon={mode === 'light' ? 'solar:sun-linear' : 'solar:moon-linear'}
             />
 
             <MaskControl value={mode} />

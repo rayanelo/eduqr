@@ -34,7 +34,7 @@ export const useAuditLogs = () => {
       if (filters.end_date) params.append('end_date', filters.end_date);
       if (filters.search) params.append('search', filters.search);
 
-      const response = await apiClient.get(`${EDUQR_API.endpoints.auditLogs}?${params.toString()}`);
+      const response = await apiClient.get(`${EDUQR_API.endpoints.auditLogs.list}?${params.toString()}`);
       
       setLogs(response.data.logs || []);
       setPagination({
@@ -64,7 +64,7 @@ export const useAuditLogs = () => {
       if (startDate) params.append('start_date', startDate);
       if (endDate) params.append('end_date', endDate);
 
-      const response = await apiClient.get(`${EDUQR_API.endpoints.auditLogs}/stats?${params.toString()}`);
+      const response = await apiClient.get(`${EDUQR_API.endpoints.auditLogs.stats}?${params.toString()}`);
       return response.data;
     } catch (err) {
       setError(err.response?.data?.error || 'Erreur lors de la récupération des statistiques');
@@ -80,7 +80,7 @@ export const useAuditLogs = () => {
     setError(null);
 
     try {
-      const response = await apiClient.get(`${EDUQR_API.endpoints.auditLogs}/recent?limit=${limit}`);
+      const response = await apiClient.get(`${EDUQR_API.endpoints.auditLogs.recent}?limit=${limit}`);
       return response.data;
     } catch (err) {
       setError(err.response?.data?.error || 'Erreur lors de la récupération des logs récents');
@@ -96,7 +96,7 @@ export const useAuditLogs = () => {
     setError(null);
 
     try {
-      const response = await apiClient.get(`${EDUQR_API.endpoints.auditLogs}/user/${userId}/activity?days=${days}`);
+      const response = await apiClient.get(`${EDUQR_API.endpoints.auditLogs.userActivity(userId)}?days=${days}`);
       return response.data;
     } catch (err) {
       setError(err.response?.data?.error || 'Erreur lors de la récupération de l\'activité utilisateur');
@@ -112,7 +112,7 @@ export const useAuditLogs = () => {
     setError(null);
 
     try {
-      const response = await apiClient.get(`${EDUQR_API.endpoints.auditLogs}/resource/${resourceType}/${resourceId}?limit=${limit}`);
+      const response = await apiClient.get(`${EDUQR_API.endpoints.auditLogs.resourceHistory(resourceType, resourceId)}?limit=${limit}`);
       return response.data;
     } catch (err) {
       setError(err.response?.data?.error || 'Erreur lors de la récupération de l\'historique de la ressource');
@@ -128,7 +128,7 @@ export const useAuditLogs = () => {
     setError(null);
 
     try {
-      const response = await apiClient.delete(`${EDUQR_API.endpoints.auditLogs}/clean?days=${days}`);
+      const response = await apiClient.delete(`${EDUQR_API.endpoints.auditLogs.clean}?days=${days}`);
       return response.data;
     } catch (err) {
       setError(err.response?.data?.error || 'Erreur lors du nettoyage des anciens logs');
@@ -144,7 +144,7 @@ export const useAuditLogs = () => {
     setError(null);
 
     try {
-      const response = await apiClient.get(`${EDUQR_API.endpoints.auditLogs}/${id}`);
+      const response = await apiClient.get(`${EDUQR_API.endpoints.auditLogs.getById(id)}`);
       return response.data;
     } catch (err) {
       setError(err.response?.data?.error || 'Erreur lors de la récupération du log');

@@ -22,8 +22,8 @@ echo "1. Connexion..."
 LOGIN_RESPONSE=$(curl -s -X POST "$BASE_URL/api/v1/auth/login" \
     -H "Content-Type: application/json" \
     -d '{
-        "email": "superadmin@eduqr.com",
-        "password": "superadmin123"
+        "email": "test_superadmin@eduqr.com",
+        "password": "test123"
     }')
 
 TOKEN=$(echo $LOGIN_RESPONSE | grep -o '"token":"[^"]*"' | cut -d'"' -f4)

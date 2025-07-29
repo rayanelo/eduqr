@@ -169,7 +169,20 @@ func (c *CourseController) GetCoursesByRoom(ctx *gin.Context) {
 		return
 	}
 
-	courses, err := c.courseService.GetCoursesByRoom(uint(roomID))
+	// Récupérer le paramètre de date optionnel
+	dateStr := ctx.Query("date")
+	var targetDate time.Time
+	if dateStr != "" {
+		targetDate, err = time.Parse("2006-01-02", dateStr)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "Format de date invalide. Utilisez YYYY-MM-DD"})
+			return
+		}
+	} else {
+		targetDate = time.Now()
+	}
+
+	courses, err := c.courseService.GetCoursesByRoomAndDate(uint(roomID), targetDate)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Erreur lors de la récupération des cours"})
 		return

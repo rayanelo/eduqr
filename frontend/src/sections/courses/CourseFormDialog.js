@@ -45,7 +45,13 @@ const schema = yup.object().shape({
   }),
   recurrence_end_date: yup.date().when('is_recurring', {
     is: true,
-    then: yup.date().required('La date de fin de récurrence est requise')
+    then: yup.date()
+      .required('La date de fin de récurrence est requise')
+      .test('is-after-start', 'La date de fin doit être après la date de début', function(value) {
+        const startTime = this.parent.start_time;
+        if (!startTime || !value) return true;
+        return value > startTime;
+      })
   }),
   exclude_holidays: yup.boolean()
 });
@@ -88,7 +94,7 @@ export default function CourseFormDialog({ open, onClose, course = null, onSubmi
       description: '',
       is_recurring: false,
       recurrence_pattern: '',
-      recurrence_end_date: new Date(),
+      recurrence_end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 jours dans le futur
       exclude_holidays: true
     }
   });
@@ -136,7 +142,7 @@ export default function CourseFormDialog({ open, onClose, course = null, onSubmi
           description: '',
           is_recurring: false,
           recurrence_pattern: '',
-          recurrence_end_date: initialData?.end_time || new Date(),
+          recurrence_end_date: initialData?.end_time || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 jours dans le futur
           exclude_holidays: true
         };
         

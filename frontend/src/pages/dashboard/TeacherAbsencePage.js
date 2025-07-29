@@ -45,10 +45,10 @@ export default function TeacherAbsencePage() {
   const [absences, setAbsences] = useState([]);
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState({
-    totalAbsences: 0,
-    pendingAbsences: 0,
-    approvedAbsences: 0,
-    rejectedAbsences: 0,
+    total_absences: 0,
+    pending_absences: 0,
+    approved_absences: 0,
+    rejected_absences: 0,
   });
 
   // Pagination
@@ -85,7 +85,7 @@ export default function TeacherAbsencePage() {
   // Load stats
   const loadStats = useCallback(async () => {
     try {
-      const response = await apiClient.get('/absences/stats');
+              const response = await apiClient.get('/api/v1/absences/stats');
       setStats(response.data);
     } catch (error) {
       console.error('Error loading stats:', error);
@@ -106,7 +106,7 @@ export default function TeacherAbsencePage() {
     }
 
     try {
-      await apiClient.post(`/absences/${selectedAbsence.id}/review`, reviewData);
+      await apiClient.post(`/api/v1/absences/${selectedAbsence.id}/review`, reviewData);
       enqueueSnackbar('Absence traitée avec succès', { variant: 'success' });
       setOpenReview(false);
       setReviewData({ status: '', reviewComment: '' });
@@ -183,7 +183,7 @@ export default function TeacherAbsencePage() {
             <Grid item xs={12} sm={6} md={3}>
               <Card sx={{ p: 3, textAlign: 'center' }}>
                 <Typography variant="h4" color="primary">
-                  {stats.totalAbsences}
+                  {stats.total_absences}
                 </Typography>
                 <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                   Total des absences
@@ -193,7 +193,7 @@ export default function TeacherAbsencePage() {
             <Grid item xs={12} sm={6} md={3}>
               <Card sx={{ p: 3, textAlign: 'center' }}>
                 <Typography variant="h4" color="warning.main">
-                  {stats.pendingAbsences}
+                  {stats.pending_absences}
                 </Typography>
                 <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                   En attente
@@ -203,7 +203,7 @@ export default function TeacherAbsencePage() {
             <Grid item xs={12} sm={6} md={3}>
               <Card sx={{ p: 3, textAlign: 'center' }}>
                 <Typography variant="h4" color="success.main">
-                  {stats.approvedAbsences}
+                  {stats.approved_absences}
                 </Typography>
                 <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                   Approuvées
@@ -213,7 +213,7 @@ export default function TeacherAbsencePage() {
             <Grid item xs={12} sm={6} md={3}>
               <Card sx={{ p: 3, textAlign: 'center' }}>
                 <Typography variant="h4" color="error.main">
-                  {stats.rejectedAbsences}
+                  {stats.rejected_absences}
                 </Typography>
                 <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                   Rejetées
@@ -230,24 +230,22 @@ export default function TeacherAbsencePage() {
                   <TableRow>
                     <TableCell>Étudiant</TableCell>
                     <TableCell>Cours</TableCell>
-                    <TableCell>Matière</TableCell>
-                    <TableCell>Date du cours</TableCell>
+                    <TableCell>Date et heure du cours</TableCell>
                     <TableCell>Justification</TableCell>
                     <TableCell>Statut</TableCell>
-                    <TableCell>Date de soumission</TableCell>
                     <TableCell align="right">Actions</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {loading ? (
                     <TableRow>
-                      <TableCell colSpan={8} align="center">
+                      <TableCell colSpan={6} align="center">
                         <CircularProgress />
                       </TableCell>
                     </TableRow>
                   ) : absences.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} align="center">
+                      <TableCell colSpan={6} align="center">
                         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                           Aucune absence trouvée
                         </Typography>
@@ -259,15 +257,26 @@ export default function TeacherAbsencePage() {
                         <TableCell>
                           {absence.student.first_name} {absence.student.last_name}
                         </TableCell>
-                        <TableCell>{absence.course.name}</TableCell>
-                        <TableCell>{absence.course.subject.name}</TableCell>
                         <TableCell>
-                          {new Date(absence.course.start_time).toLocaleDateString('fr-FR')}
+                          <Tooltip title={absence.course.name} arrow>
+                            <Typography variant="body2" noWrap>
+                              {absence.course.name.length > 15 
+                                ? `${absence.course.name.substring(0, 15)}...` 
+                                : absence.course.name}
+                            </Typography>
+                          </Tooltip>
                         </TableCell>
                         <TableCell>
-                          <Typography variant="body2" noWrap sx={{ maxWidth: 200 }}>
-                            {absence.justification}
-                          </Typography>
+                          {new Date(absence.course.start_time).toLocaleDateString('fr-FR')} à {new Date(absence.course.start_time).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                        </TableCell>
+                        <TableCell>
+                          <Tooltip title={absence.justification} arrow>
+                            <Typography variant="body2" noWrap sx={{ maxWidth: 200 }}>
+                              {absence.justification.length > 15 
+                                ? `${absence.justification.substring(0, 15)}...` 
+                                : absence.justification}
+                            </Typography>
+                          </Tooltip>
                         </TableCell>
                         <TableCell>
                           <Chip
@@ -275,9 +284,6 @@ export default function TeacherAbsencePage() {
                             color={getStatusColor(absence.status)}
                             size="small"
                           />
-                        </TableCell>
-                        <TableCell>
-                          {new Date(absence.created_at).toLocaleDateString('fr-FR')}
                         </TableCell>
                         <TableCell align="right">
                           <Stack direction="row" spacing={1} justifyContent="flex-end">
@@ -375,10 +381,10 @@ export default function TeacherAbsencePage() {
                   fullWidth
                   multiline
                   rows={4}
-                  label="Commentaire *"
+                  label="Commentaire (optionnel)"
                   value={reviewData.reviewComment}
                   onChange={(e) => setReviewData({ ...reviewData, reviewComment: e.target.value })}
-                  placeholder="Expliquez votre décision..."
+                  placeholder="Expliquez votre décision (optionnel)..."
                 />
               </Stack>
             )}

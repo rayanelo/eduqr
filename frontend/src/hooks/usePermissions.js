@@ -23,6 +23,11 @@ export const usePermissions = () => {
   const canViewAbsences = user?.role === ROLES.SUPER_ADMIN || user?.role === ROLES.ADMIN || user?.role === ROLES.PROFESSEUR;
   const canSubmitAbsences = user?.role === ROLES.ETUDIANT;
 
+  // QR Code permissions
+  const canScanQRCode = user?.role === ROLES.ETUDIANT;
+  const canViewQRCode = user?.role === ROLES.SUPER_ADMIN || user?.role === ROLES.ADMIN || user?.role === ROLES.PROFESSEUR;
+  const canViewQRByRoom = user?.role === ROLES.SUPER_ADMIN || user?.role === ROLES.ADMIN;
+
   // Vérifier si l'utilisateur peut supprimer des éléments
   const canDelete = () => {
     return user?.role === 'admin' || user?.role === 'super_admin';
@@ -149,6 +154,10 @@ export const usePermissions = () => {
     canManageAbsences,
     canViewAbsences,
     canSubmitAbsences,
+
+    canScanQRCode,
+    canViewQRCode,
+    canViewQRByRoom,
     canDelete,
     canDeleteUser,
     canDeleteRoom,

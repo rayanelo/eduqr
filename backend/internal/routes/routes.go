@@ -21,6 +21,7 @@ type Router struct {
 	courseController   *controllers.CourseController
 	auditLogController *controllers.AuditLogController
 	absenceController  *controllers.AbsenceController
+	presenceController *controllers.PresenceController
 	authMiddleware     *middlewares.AuthMiddleware
 	auditMiddleware    *middlewares.AuditMiddleware
 }
@@ -33,6 +34,7 @@ func NewRouter(
 	courseController *controllers.CourseController,
 	auditLogController *controllers.AuditLogController,
 	absenceController *controllers.AbsenceController,
+	presenceController *controllers.PresenceController,
 	authMiddleware *middlewares.AuthMiddleware,
 	auditMiddleware *middlewares.AuditMiddleware,
 ) *Router {
@@ -44,6 +46,7 @@ func NewRouter(
 		courseController:   courseController,
 		auditLogController: auditLogController,
 		absenceController:  absenceController,
+		presenceController: presenceController,
 		authMiddleware:     authMiddleware,
 		auditMiddleware:    auditMiddleware,
 	}
@@ -127,6 +130,29 @@ func (r *Router) SetupRoutes() *gin.Engine {
 			absences.DELETE("/:id", r.absenceController.DeleteAbsence)          // Selon les permissions
 		}
 
+		// Presence routes (authentication required)
+		presences := v1.Group("/presences")
+		presences.Use(r.authMiddleware.AuthMiddleware())
+		{
+			// Routes pour les étudiants
+			presences.POST("/scan", r.presenceController.ScanQRCode)  // Étudiants seulement
+			presences.GET("/my", r.presenceController.GetMyPresences) // Étudiants seulement
+
+			// Routes pour les professeurs et admins
+			presences.GET("/course/:courseId", r.presenceController.GetPresencesByCourse)                     // Professeurs et admins
+			presences.GET("/course/:courseId/stats", r.presenceController.GetPresenceStats)                   // Professeurs et admins
+			presences.POST("/course/:courseId/create-all", r.presenceController.CreatePresenceForAllStudents) // Professeurs et admins
+		}
+
+		// QR Code routes (authentication required)
+		qrCodes := v1.Group("/qr-codes")
+		qrCodes.Use(r.authMiddleware.AuthMiddleware())
+		{
+			// Routes pour les professeurs et admins
+			qrCodes.GET("/course/:courseId", r.presenceController.GetQRCodeInfo)                // Professeurs et admins
+			qrCodes.POST("/course/:courseId/regenerate", r.presenceController.RegenerateQRCode) // Professeurs et admins
+		}
+
 		// Room routes (admin authentication required)
 		rooms := v1.Group("/admin/rooms")
 		rooms.Use(r.authMiddleware.AuthMiddleware())
@@ -172,6 +198,14 @@ func (r *Router) SetupRoutes() *gin.Engine {
 		adminAbsences.Use(r.authMiddleware.RoleMiddleware("admin"))
 		{
 			adminAbsences.GET("", r.absenceController.GetAllAbsences)
+		}
+
+		// Admin presence routes (admin authentication required)
+		adminPresences := v1.Group("/admin/presences")
+		adminPresences.Use(r.authMiddleware.AuthMiddleware())
+		adminPresences.Use(r.authMiddleware.RoleMiddleware("admin"))
+		{
+			adminPresences.GET("", r.presenceController.GetPresencesWithFilters)
 		}
 
 		// Routes de suppression sécurisées

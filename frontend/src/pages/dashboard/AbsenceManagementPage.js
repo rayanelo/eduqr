@@ -44,10 +44,10 @@ export default function AbsenceManagementPage() {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState({
-    totalAbsences: 0,
-    pendingAbsences: 0,
-    approvedAbsences: 0,
-    rejectedAbsences: 0,
+    total_absences: 0,
+    pending_absences: 0,
+    approved_absences: 0,
+    rejected_absences: 0,
   });
 
   // Pagination
@@ -71,7 +71,7 @@ export default function AbsenceManagementPage() {
   const loadAbsences = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await apiClient.get(`/absences/my?page=${page + 1}&limit=${rowsPerPage}`);
+      const response = await apiClient.get(`/api/v1/absences/my?page=${page + 1}&limit=${rowsPerPage}`);
       setAbsences(response.data.data || []);
       setTotal(response.data.total || 0);
     } catch (error) {
@@ -85,7 +85,7 @@ export default function AbsenceManagementPage() {
   // Load courses
   const loadCourses = useCallback(async () => {
     try {
-      const response = await apiClient.get('/admin/courses');
+              const response = await apiClient.get('/api/v1/admin/courses');
       // Filtrer seulement les cours passés
       const now = new Date();
       const pastCourses = response.data.filter(course => new Date(course.end_time) < now);
@@ -99,7 +99,7 @@ export default function AbsenceManagementPage() {
   // Load stats
   const loadStats = useCallback(async () => {
     try {
-      const response = await apiClient.get('/absences/stats');
+              const response = await apiClient.get('/api/v1/absences/stats');
       setStats(response.data);
     } catch (error) {
       console.error('Error loading stats:', error);
@@ -121,7 +121,7 @@ export default function AbsenceManagementPage() {
     }
 
     try {
-      await apiClient.post('/absences', formData);
+      await apiClient.post('/api/v1/absences', formData);
       enqueueSnackbar('Absence créée avec succès', { variant: 'success' });
       setOpenForm(false);
       setFormData({ courseId: '', justification: '', documentPath: '' });
@@ -195,7 +195,7 @@ export default function AbsenceManagementPage() {
             <Grid item xs={12} sm={6} md={3}>
               <Card sx={{ p: 3, textAlign: 'center' }}>
                 <Typography variant="h4" color="primary">
-                  {stats.totalAbsences}
+                  {stats.total_absences}
                 </Typography>
                 <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                   Total des absences
@@ -205,7 +205,7 @@ export default function AbsenceManagementPage() {
             <Grid item xs={12} sm={6} md={3}>
               <Card sx={{ p: 3, textAlign: 'center' }}>
                 <Typography variant="h4" color="warning.main">
-                  {stats.pendingAbsences}
+                  {stats.pending_absences}
                 </Typography>
                 <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                   En attente
@@ -215,7 +215,7 @@ export default function AbsenceManagementPage() {
             <Grid item xs={12} sm={6} md={3}>
               <Card sx={{ p: 3, textAlign: 'center' }}>
                 <Typography variant="h4" color="success.main">
-                  {stats.approvedAbsences}
+                  {stats.approved_absences}
                 </Typography>
                 <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                   Approuvées
@@ -225,7 +225,7 @@ export default function AbsenceManagementPage() {
             <Grid item xs={12} sm={6} md={3}>
               <Card sx={{ p: 3, textAlign: 'center' }}>
                 <Typography variant="h4" color="error.main">
-                  {stats.rejectedAbsences}
+                  {stats.rejected_absences}
                 </Typography>
                 <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                   Rejetées

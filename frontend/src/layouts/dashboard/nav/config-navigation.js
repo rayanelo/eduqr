@@ -5,13 +5,13 @@ import { useLocales } from '../../../locales';
 import { usePermissions } from '../../../hooks/usePermissions';
 
 // components
-import SvgColor from '../../../components/svg-color';
+import Iconify from '../../../components/iconify';
 
 // ----------------------------------------------------------------------
 
 export function useNavData() {
   const { translate } = useLocales();
-  const { canManageUsers, canManageRooms, canManageSubjects, canAccessAuditLogs, canManageAbsences, canViewAbsences, canSubmitAbsences } = usePermissions();
+  const { canManageUsers, canManageRooms, canManageSubjects, canAccessAuditLogs, canManageAbsences, canViewAbsences, canSubmitAbsences, canScanQRCode, canViewQRByRoom } = usePermissions();
 
   const data = useMemo(
     () => [
@@ -23,12 +23,12 @@ export function useNavData() {
           {
             title: translate('profile'),
             path: '/dashboard/profile',
-            icon: <SvgColor src="/assets/icons/navbar/ic_user.svg" />,
+            icon: <Iconify icon="mdi:account" />,
           },
           {
             title: translate('calendar'),
             path: '/dashboard/calendar',
-            icon: <SvgColor src="/assets/icons/navbar/ic_calendar.svg" />,
+            icon: <Iconify icon="mdi:calendar" />,
           },
         ],
       },
@@ -43,7 +43,7 @@ export function useNavData() {
                 {
                   title: translate('user'),
                   path: '/dashboard/user-management',
-                  icon: <SvgColor src="/assets/icons/navbar/ic_user.svg" />,
+                  icon: <Iconify icon="mdi:account-group" />,
                 },
               ]
             : []),
@@ -52,7 +52,7 @@ export function useNavData() {
                 {
                   title: 'Salles',
                   path: '/dashboard/room-management',
-                  icon: <SvgColor src="/assets/icons/navbar/ic_booking.svg" />,
+                  icon: <Iconify icon="mdi:office-building" />,
                 },
               ]
             : []),
@@ -61,12 +61,12 @@ export function useNavData() {
                 {
                   title: 'Matières',
                   path: '/dashboard/subject-management',
-                  icon: <SvgColor src="/assets/icons/navbar/ic_file.svg" />,
+                  icon: <Iconify icon="mdi:book-open-variant" />,
                 },
                 {
                   title: 'Cours',
                   path: '/dashboard/course-management',
-                  icon: <SvgColor src="/assets/icons/navbar/ic_kanban.svg" />,
+                  icon: <Iconify icon="mdi:calendar" />,
                 },
               ]
             : []),
@@ -75,7 +75,7 @@ export function useNavData() {
                 {
                   title: 'Journal d\'Activité',
                   path: '/dashboard/audit-logs',
-                  icon: <SvgColor src="/assets/icons/navbar/ic_analytics.svg" />,
+                  icon: <Iconify icon="mdi:file-document" />,
                 },
               ]
             : []),
@@ -84,7 +84,7 @@ export function useNavData() {
                 {
                   title: 'Mes Absences',
                   path: '/dashboard/my-absences',
-                  icon: <SvgColor src="/assets/icons/navbar/ic_user.svg" />,
+                  icon: <Iconify icon="mdi:account-clock" />,
                 },
               ]
             : []),
@@ -93,7 +93,7 @@ export function useNavData() {
                 {
                   title: 'Absences à Traiter',
                   path: '/dashboard/teacher-absences',
-                  icon: <SvgColor src="/assets/icons/navbar/ic_analytics.svg" />,
+                  icon: <Iconify icon="mdi:check-circle" />,
                 },
               ]
             : []),
@@ -102,14 +102,32 @@ export function useNavData() {
                 {
                   title: 'Gestion des Absences',
                   path: '/dashboard/admin-absences',
-                  icon: <SvgColor src="/assets/icons/navbar/ic_analytics.svg" />,
+                  icon: <Iconify icon="mdi:calendar-remove" />,
+                },
+              ]
+            : []),
+          ...(canViewQRByRoom
+            ? [
+                {
+                  title: 'QR Codes par Salle',
+                  path: '/dashboard/qr-by-room',
+                  icon: <Iconify icon="mdi:qrcode" />,
+                },
+              ]
+            : []),
+          ...(canScanQRCode
+            ? [
+                {
+                  title: 'Scanner QR Code',
+                  path: '/dashboard/qr-scanner',
+                  icon: <Iconify icon="mdi:qrcode-scan" />,
                 },
               ]
             : []),
         ],
       },
     ],
-    [translate, canManageUsers, canManageRooms, canManageSubjects, canAccessAuditLogs, canManageAbsences, canViewAbsences, canSubmitAbsences]
+    [translate, canManageUsers, canManageRooms, canManageSubjects, canAccessAuditLogs, canManageAbsences, canViewAbsences, canSubmitAbsences, canScanQRCode, canViewQRByRoom]
   );
 
   return data;

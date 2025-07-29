@@ -1,7 +1,7 @@
 // @mui
 import { RadioGroup } from '@mui/material';
 //
-import SvgColor from '../../svg-color';
+import Iconify from '../../iconify';
 import { useSettingsContext } from '../SettingsContext';
 import { StyledCard, StyledWrap, MaskControl } from '../styles';
 
@@ -17,10 +17,10 @@ export default function ContrastOptions() {
       <StyledWrap>
         {OPTIONS.map((contrast) => (
           <StyledCard key={contrast} selected={themeContrast === contrast}>
-            <SvgColor
-              src={`/assets/icons/setting/${
-                contrast === 'bold' ? 'ic_contrast_bold' : 'ic_contrast'
-              }.svg`}
+            <Iconify
+              icon={
+                contrast === 'bold' ? 'solar:contrast-bold-linear' : 'solar:contrast-linear'
+              }
             />
 
             <MaskControl value={contrast} />

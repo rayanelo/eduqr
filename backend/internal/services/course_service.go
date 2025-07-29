@@ -78,6 +78,13 @@ func (s *CourseService) CreateCourse(req *models.CreateCourseRequest) (*models.C
 		return nil, fmt.Errorf("salle non trouvée")
 	}
 
+	// Vérifier que la date de fin de récurrence est après la date de début
+	if req.IsRecurring && req.RecurrenceEndDate != nil {
+		if req.RecurrenceEndDate.Before(req.StartTime) || req.RecurrenceEndDate.Equal(req.StartTime) {
+			return nil, fmt.Errorf("la date de fin de récurrence doit être après la date de début")
+		}
+	}
+
 	// Créer le cours
 	course := &models.Course{
 		Name:              req.Name,
@@ -275,6 +282,21 @@ func (s *CourseService) GetCoursesByDateRange(startDate, endDate time.Time) ([]m
 // GetCoursesByRoom récupère les cours d'une salle
 func (s *CourseService) GetCoursesByRoom(roomID uint) ([]models.CourseResponse, error) {
 	courses, err := s.courseRepo.GetCoursesByRoom(roomID)
+	if err != nil {
+		return nil, err
+	}
+
+	responses := make([]models.CourseResponse, len(courses))
+	for i, course := range courses {
+		responses[i] = course.ToCourseResponse()
+	}
+
+	return responses, nil
+}
+
+// GetCoursesByRoomAndDate récupère les cours d'une salle pour une date spécifique
+func (s *CourseService) GetCoursesByRoomAndDate(roomID uint, targetDate time.Time) ([]models.CourseResponse, error) {
+	courses, err := s.courseRepo.GetCoursesByRoomAndDate(roomID, targetDate)
 	if err != nil {
 		return nil, err
 	}
