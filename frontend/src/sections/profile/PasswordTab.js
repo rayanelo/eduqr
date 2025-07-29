@@ -15,6 +15,12 @@ import {
   Chip,
   InputAdornment,
   IconButton,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Paper,
+  Fade,
 } from '@mui/material';
 import { LoadingButton } from '@mui/lab';
 // components
@@ -33,12 +39,47 @@ const PasswordSchema = Yup.object().shape({
     .required('La confirmation du mot de passe est requise'),
 });
 
+// Critères de validation du mot de passe
+const PASSWORD_CRITERIA = [
+  {
+    key: 'length',
+    label: 'Au moins 8 caractères',
+    test: (password) => password.length >= 8,
+    icon: 'eva:checkmark-circle-2-fill',
+  },
+  {
+    key: 'uppercase',
+    label: 'Au moins 1 lettre majuscule',
+    test: (password) => /[A-Z]/.test(password),
+    icon: 'eva:checkmark-circle-2-fill',
+  },
+  {
+    key: 'lowercase',
+    label: 'Au moins 1 lettre minuscule',
+    test: (password) => /[a-z]/.test(password),
+    icon: 'eva:checkmark-circle-2-fill',
+  },
+  {
+    key: 'number',
+    label: 'Au moins 1 chiffre',
+    test: (password) => /[0-9]/.test(password),
+    icon: 'eva:checkmark-circle-2-fill',
+  },
+  {
+    key: 'special',
+    label: 'Au moins 1 caractère spécial (!@#$%^&*)',
+    test: (password) => /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password),
+    icon: 'eva:checkmark-circle-2-fill',
+  },
+];
+
 export default function PasswordTab({ onChangePassword, onValidatePassword, isLoading }) {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState(null);
   const [isValidating, setIsValidating] = useState(false);
+  const [criteriaStatus, setCriteriaStatus] = useState({});
 
   const defaultValues = {
     current_password: '',
@@ -59,6 +100,7 @@ export default function PasswordTab({ onChangePassword, onValidatePassword, isLo
   } = methods;
 
   const newPassword = watch('new_password');
+  const confirmPassword = watch('confirm_password');
 
   // Validation côté client en temps réel
   const validatePasswordClient = (password) => {
@@ -75,33 +117,43 @@ export default function PasswordTab({ onChangePassword, onValidatePassword, isLo
     const score = Object.values(criteria).filter(Boolean).length;
     
     let feedback = '';
+    let strengthLevel = '';
+    
     switch (score) {
       case 0:
-        feedback = 'Mot de passe très faible';
+        feedback = 'Mot de passe très faible - Ajoutez plus de caractères et de variété';
+        strengthLevel = 'Très faible';
         break;
       case 1:
-        feedback = 'Mot de passe faible';
+        feedback = 'Mot de passe faible - Ajoutez des lettres majuscules, minuscules, chiffres ou caractères spéciaux';
+        strengthLevel = 'Faible';
         break;
       case 2:
-        feedback = 'Mot de passe moyen';
+        feedback = 'Mot de passe moyen - Ajoutez plus de variété de caractères';
+        strengthLevel = 'Moyen';
         break;
       case 3:
-        feedback = 'Mot de passe bon';
+        feedback = 'Mot de passe bon - Presque parfait !';
+        strengthLevel = 'Bon';
         break;
       case 4:
-        feedback = 'Mot de passe fort';
+        feedback = 'Mot de passe fort - Excellent niveau de sécurité';
+        strengthLevel = 'Fort';
         break;
       case 5:
-        feedback = 'Mot de passe très fort';
+        feedback = 'Mot de passe très fort - Niveau de sécurité optimal';
+        strengthLevel = 'Très fort';
         break;
       default:
         feedback = 'Mot de passe invalide';
+        strengthLevel = 'Invalide';
         break;
     }
     
     return {
       score,
       feedback,
+      strengthLevel,
       is_valid: score >= 4,
       criteria,
     };
@@ -115,12 +167,20 @@ export default function PasswordTab({ onChangePassword, onValidatePassword, isLo
         const clientStrength = validatePasswordClient(newPassword);
         setPasswordStrength(clientStrength);
         
+        // Mettre à jour le statut des critères
+        setCriteriaStatus(clientStrength.criteria);
+        
         // Validation côté serveur après un délai (pour les mots de passe plus longs)
         if (newPassword.length >= 3) {
           setIsValidating(true);
           try {
             const serverStrength = await onValidatePassword(newPassword);
+            // Ajouter le strengthLevel si il n'existe pas
+            if (!serverStrength.strengthLevel) {
+              serverStrength.strengthLevel = getStrengthLevelFromScore(serverStrength.score);
+            }
             setPasswordStrength(serverStrength);
+            setCriteriaStatus(serverStrength.criteria);
           } catch (error) {
             console.error('Error validating password:', error);
             // Garder la validation côté client en cas d'erreur serveur
@@ -130,18 +190,40 @@ export default function PasswordTab({ onChangePassword, onValidatePassword, isLo
         }
       } else {
         setPasswordStrength(null);
+        setCriteriaStatus({});
       }
     };
 
-    const timeoutId = setTimeout(validatePassword, 200); // Réduit de 500ms à 200ms
+    const timeoutId = setTimeout(validatePassword, 200);
     return () => clearTimeout(timeoutId);
   }, [newPassword, onValidatePassword]);
+
+  // Fonction pour obtenir le niveau de force à partir du score
+  const getStrengthLevelFromScore = (score) => {
+    switch (score) {
+      case 0:
+        return 'Très faible';
+      case 1:
+        return 'Faible';
+      case 2:
+        return 'Moyen';
+      case 3:
+        return 'Bon';
+      case 4:
+        return 'Fort';
+      case 5:
+        return 'Très fort';
+      default:
+        return 'Invalide';
+    }
+  };
 
   const onSubmit = async (data) => {
     try {
       await onChangePassword(data);
       reset();
       setPasswordStrength(null);
+      setCriteriaStatus({});
     } catch (error) {
       console.error('Error changing password:', error);
     }
@@ -164,191 +246,234 @@ export default function PasswordTab({ onChangePassword, onValidatePassword, isLo
     }
   };
 
-  const getStrengthText = (score) => {
+  const getStrengthIcon = (score) => {
     switch (score) {
       case 0:
-        return 'Très faible';
       case 1:
-        return 'Faible';
+        return 'eva:alert-triangle-fill';
       case 2:
-        return 'Moyen';
+        return 'eva:alert-circle-fill';
       case 3:
-        return 'Bon';
+        return 'eva:checkmark-circle-fill';
       case 4:
-        return 'Fort';
       case 5:
-        return 'Très fort';
+        return 'eva:shield-fill';
       default:
-        return '';
+        return 'eva:help-circle-fill';
     }
   };
 
+  const isPasswordMatch = newPassword && confirmPassword && newPassword === confirmPassword;
+
   return (
-      <Stack sx={{ p: 3 }} spacing={3}>
-        {/* Header */}
-        <Typography variant="h6">Sécurité</Typography>
+    <Stack sx={{ p: 3 }} spacing={3}>
+      {/* Header */}
+      <Typography variant="h6">Sécurité</Typography>
 
-        <Divider />
+      <Divider />
 
-        {/* Form */}
-        <FormProvider methods={methods} onSubmit={handleSubmit(onSubmit)}>
-          <Stack spacing={3}>
-            {/* Mot de passe actuel */}
-            <RHFTextField
-              name="current_password"
-              label="Mot de passe actuel"
-              type={showCurrentPassword ? 'text' : 'password'}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                      edge="end"
-                    >
-                      <Iconify icon={showCurrentPassword ? 'eva:eye-fill' : 'eva:eye-off-fill'} />
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
+      {/* Form */}
+      <FormProvider methods={methods} onSubmit={handleSubmit(onSubmit)}>
+        <Stack spacing={3}>
+          {/* Mot de passe actuel */}
+          <RHFTextField
+            name="current_password"
+            label="Mot de passe actuel"
+            type={showCurrentPassword ? 'text' : 'password'}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    edge="end"
+                  >
+                    <Iconify icon={showCurrentPassword ? 'eva:eye-fill' : 'eva:eye-off-fill'} />
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
 
-            {/* Nouveau mot de passe */}
-            <RHFTextField
-              name="new_password"
-              label="Nouveau mot de passe"
-              type={showNewPassword ? 'text' : 'password'}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => setShowNewPassword(!showNewPassword)}
-                      edge="end"
-                    >
-                      <Iconify icon={showNewPassword ? 'eva:eye-fill' : 'eva:eye-off-fill'} />
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
+          {/* Nouveau mot de passe */}
+          <RHFTextField
+            name="new_password"
+            label="Nouveau mot de passe"
+            type={showNewPassword ? 'text' : 'password'}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    edge="end"
+                  >
+                    <Iconify icon={showNewPassword ? 'eva:eye-fill' : 'eva:eye-off-fill'} />
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
 
-            {/* Indicateur de validation en cours */}
-            {newPassword && newPassword.length < 3 && (
-              <Typography variant="caption" color="text.secondary">
-                Continuez à taper pour voir la validation en temps réel...
-              </Typography>
-            )}
+          {/* Indicateur de validation en cours */}
+          {newPassword && newPassword.length < 3 && (
+            <Typography variant="caption" color="text.secondary">
+              Continuez à taper pour voir la validation en temps réel...
+            </Typography>
+          )}
 
-            {/* Indicateur de force du mot de passe */}
-            {newPassword && passwordStrength && (
-              <Box>
-                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+          {/* Indicateur de force du mot de passe */}
+          {newPassword && passwordStrength && (
+            <Fade in={true} timeout={300}>
+              <Paper elevation={1} sx={{ p: 2, bgcolor: 'background.neutral' }}>
+                <Stack spacing={2}>
+                  {/* Header avec score et feedback */}
+                  <Stack direction="row" alignItems="center" spacing={2}>
+                    <Iconify 
+                      icon={getStrengthIcon(passwordStrength.score)} 
+                      color={getStrengthColor(passwordStrength.score)}
+                      width={24}
+                    />
+                    <Box sx={{ flexGrow: 1 }}>
+                      <Stack direction="row" alignItems="center" spacing={1}>
+                        <Typography variant="body2" color="text.secondary">
+                          Force du mot de passe:
+                        </Typography>
+                        <Chip
+                          label={passwordStrength.strengthLevel || getStrengthLevelFromScore(passwordStrength.score)}
+                          color={getStrengthColor(passwordStrength.score)}
+                          size="small"
+                          variant="filled"
+                        />
+                        {isValidating && (
+                          <Typography variant="caption" color="text.secondary">
+                            Validation serveur...
+                          </Typography>
+                        )}
+                      </Stack>
+                    </Box>
+                  </Stack>
+
+                  {/* Barre de progression */}
+                  <Box>
+                    <LinearProgress
+                      variant="determinate"
+                      value={(passwordStrength.score / 5) * 100}
+                      color={getStrengthColor(passwordStrength.score)}
+                      sx={{ 
+                        height: 8, 
+                        borderRadius: 4,
+                        bgcolor: 'background.paper',
+                        '& .MuiLinearProgress-bar': {
+                          borderRadius: 4,
+                        }
+                      }}
+                    />
+                  </Box>
+
+                  {/* Message de feedback */}
                   <Typography variant="body2" color="text.secondary">
-                    Force du mot de passe:
+                    {passwordStrength.feedback}
                   </Typography>
-                  <Chip
-                    label={getStrengthText(passwordStrength.score)}
-                    color={getStrengthColor(passwordStrength.score)}
-                    size="small"
-                  />
-                  {isValidating && (
-                    <Typography variant="caption" color="text.secondary">
-                      Validation serveur...
+
+                  {/* Critères de validation */}
+                  <Box>
+                    <Typography variant="subtitle2" color="text.primary" sx={{ mb: 1 }}>
+                      Critères de sécurité:
                     </Typography>
+                    <List dense sx={{ py: 0 }}>
+                      {PASSWORD_CRITERIA.map((criterion) => {
+                        const isMet = criteriaStatus[criterion.key];
+                        return (
+                          <ListItem key={criterion.key} sx={{ py: 0.5, px: 0 }}>
+                            <ListItemIcon sx={{ minWidth: 32 }}>
+                              <Iconify
+                                icon={isMet ? 'eva:checkmark-circle-2-fill' : 'eva:radio-button-off-fill'}
+                                color={isMet ? 'success.main' : 'text.disabled'}
+                                width={16}
+                              />
+                            </ListItemIcon>
+                            <ListItemText
+                              primary={criterion.label}
+                              primaryTypographyProps={{
+                                variant: 'body2',
+                                color: isMet ? 'text.primary' : 'text.disabled',
+                                sx: {
+                                  textDecoration: isMet ? 'none' : 'none',
+                                  fontWeight: isMet ? 500 : 400,
+                                }
+                              }}
+                            />
+                          </ListItem>
+                        );
+                      })}
+                    </List>
+                  </Box>
+
+                  {/* Alerte si le mot de passe n'est pas assez fort */}
+                  {!passwordStrength.is_valid && (
+                    <Alert severity="warning" sx={{ mt: 1 }}>
+                      Le mot de passe doit respecter au moins 4 critères de sécurité sur 5.
+                    </Alert>
                   )}
                 </Stack>
+              </Paper>
+            </Fade>
+          )}
 
-                <LinearProgress
-                  variant="determinate"
-                  value={(passwordStrength.score / 5) * 100}
-                  color={getStrengthColor(passwordStrength.score)}
-                  sx={{ mb: 1 }}
-                />
+          {/* Confirmation du mot de passe */}
+          <RHFTextField
+            name="confirm_password"
+            label="Confirmer le nouveau mot de passe"
+            type={showConfirmPassword ? 'text' : 'password'}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    edge="end"
+                  >
+                    <Iconify icon={showConfirmPassword ? 'eva:eye-fill' : 'eva:eye-off-fill'} />
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
 
-                <Typography variant="caption" color="text.secondary">
-                  {passwordStrength.feedback}
-                </Typography>
-
-                {/* Critères */}
-                <Stack spacing={0.5} sx={{ mt: 2 }}>
-                  <Typography variant="caption" color="text.secondary">
-                    Critères de sécurité:
-                  </Typography>
-                  <Stack direction="row" flexWrap="wrap" gap={1}>
-                    <Chip
-                      label="8+ caractères"
-                      size="small"
-                      variant={passwordStrength.criteria.length ? 'filled' : 'outlined'}
-                      color={passwordStrength.criteria.length ? 'success' : 'default'}
-                    />
-                    <Chip
-                      label="Majuscule"
-                      size="small"
-                      variant={passwordStrength.criteria.uppercase ? 'filled' : 'outlined'}
-                      color={passwordStrength.criteria.uppercase ? 'success' : 'default'}
-                    />
-                    <Chip
-                      label="Minuscule"
-                      size="small"
-                      variant={passwordStrength.criteria.lowercase ? 'filled' : 'outlined'}
-                      color={passwordStrength.criteria.lowercase ? 'success' : 'default'}
-                    />
-                    <Chip
-                      label="Chiffre"
-                      size="small"
-                      variant={passwordStrength.criteria.number ? 'filled' : 'outlined'}
-                      color={passwordStrength.criteria.number ? 'success' : 'default'}
-                    />
-                    <Chip
-                      label="Caractère spécial"
-                      size="small"
-                      variant={passwordStrength.criteria.special ? 'filled' : 'outlined'}
-                      color={passwordStrength.criteria.special ? 'success' : 'default'}
-                    />
-                  </Stack>
-                </Stack>
-
-                {!passwordStrength.is_valid && (
-                  <Alert severity="warning" sx={{ mt: 2 }}>
-                    Le mot de passe doit respecter au moins 4 critères de sécurité sur 5.
-                  </Alert>
-                )}
-              </Box>
-            )}
-
-            {/* Confirmation du mot de passe */}
-            <RHFTextField
-              name="confirm_password"
-              label="Confirmer le nouveau mot de passe"
-              type={showConfirmPassword ? 'text' : 'password'}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      edge="end"
-                    >
-                      <Iconify icon={showConfirmPassword ? 'eva:eye-fill' : 'eva:eye-off-fill'} />
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-
-            {/* Actions */}
-            <Stack direction="row" spacing={2} justifyContent="flex-end">
-              <LoadingButton
-                type="submit"
-                variant="contained"
-                loading={isSubmitting || isLoading}
-                disabled={passwordStrength && !passwordStrength.is_valid}
+          {/* Indicateur de correspondance des mots de passe */}
+          {confirmPassword && (
+            <Fade in={true} timeout={200}>
+              <Alert 
+                severity={isPasswordMatch ? 'success' : 'error'} 
+                icon={<Iconify icon={isPasswordMatch ? 'eva:checkmark-circle-2-fill' : 'eva:close-circle-fill'} />}
+                sx={{ py: 0.5 }}
               >
-                Changer le mot de passe
-              </LoadingButton>
-            </Stack>
+                {isPasswordMatch 
+                  ? 'Les mots de passe correspondent' 
+                  : 'Les mots de passe ne correspondent pas'
+                }
+              </Alert>
+            </Fade>
+          )}
+
+          {/* Actions */}
+          <Stack direction="row" spacing={2} justifyContent="flex-end">
+            <LoadingButton
+              type="submit"
+              variant="contained"
+              loading={isSubmitting || isLoading}
+              disabled={
+                (passwordStrength && !passwordStrength.is_valid) || 
+                !isPasswordMatch ||
+                !newPassword ||
+                !confirmPassword
+              }
+              startIcon={<Iconify icon="eva:lock-fill" />}
+            >
+              Changer le mot de passe
+            </LoadingButton>
           </Stack>
-        </FormProvider>
-      </Stack>
-  
+        </Stack>
+      </FormProvider>
+    </Stack>
   );
 }
 

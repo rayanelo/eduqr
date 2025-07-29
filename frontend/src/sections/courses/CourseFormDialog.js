@@ -211,11 +211,7 @@ export default function CourseFormDialog({ open, onClose, course = null, onSubmi
         <DialogContent>
           <Grid container spacing={3}>
             {/* Informations de base */}
-            <Grid item xs={12}>
-              <Typography variant="h6" gutterBottom>
-                Informations de base
-              </Typography>
-            </Grid>
+
 
             <Grid item xs={12} md={6}>
               <Controller

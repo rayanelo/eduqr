@@ -16,6 +16,8 @@ export const EDUQR_API = {
     users: {
       profile: '/api/v1/users/profile',
       updateProfile: '/api/v1/users/profile',
+      changePassword: '/api/v1/users/profile/password',
+      validatePassword: '/api/v1/users/profile/validate-password',
       list: '/api/v1/users/all',
       create: '/api/v1/users/create',
       getById: (id) => `/api/v1/users/${id}`,

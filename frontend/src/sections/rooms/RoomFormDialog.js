@@ -136,9 +136,6 @@ export default function RoomFormDialog({ open, onClose, onSuccess, room, isEdit 
       case 0:
         return (
           <Stack spacing={3}>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              Informations de base
-            </Typography>
 
             <RHFTextField
               name="name"

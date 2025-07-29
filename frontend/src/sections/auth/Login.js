@@ -36,7 +36,7 @@ export default function Login() {
         </Tooltip>
       </Stack>
 
-      <Alert severity="info" sx={{ mb: 3 }}>
+      {/* <Alert severity="info" sx={{ mb: 3 }}>
         <Typography variant="body2" sx={{ mb: 1 }}>
           <strong>Compte de test disponible :</strong>
         </Typography>
@@ -46,7 +46,7 @@ export default function Login() {
         <Typography variant="body2">
           Créez votre propre compte ou utilisez celui-ci pour tester l'application.
         </Typography>
-      </Alert>
+      </Alert> */}
 
       <AuthLoginForm />
 

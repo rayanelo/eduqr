@@ -1,6 +1,9 @@
 // i18n
 import './locales/i18n';
 
+// FullCalendar locales
+import './utils/calendarLocales';
+
 // scroll bar
 import 'simplebar-react/dist/simplebar.min.css';
 
