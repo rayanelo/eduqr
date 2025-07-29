@@ -1,6 +1,8 @@
 import PropTypes from 'prop-types';
 import { useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
+// @mui
+import { useTheme } from '@mui/material/styles';
 // hooks
 import useActiveLink from '../../../hooks/useActiveLink';
 //
@@ -16,7 +18,9 @@ NavList.propTypes = {
 };
 
 export default function NavList({ data, depth, hasChild }) {
+  const theme = useTheme();
   const navRef = useRef(null);
+  const isRTL = theme.direction === 'rtl';
 
   const { pathname } = useLocation();
 
@@ -78,13 +82,13 @@ export default function NavList({ data, depth, hasChild }) {
           anchorEl={navRef.current}
           anchorOrigin={
             depth === 1
-              ? { vertical: 'bottom', horizontal: 'left' }
-              : { vertical: 'center', horizontal: 'right' }
+              ? { vertical: 'bottom', horizontal: isRTL ? 'right' : 'left' }
+              : { vertical: 'center', horizontal: isRTL ? 'left' : 'right' }
           }
           transformOrigin={
             depth === 1
-              ? { vertical: 'top', horizontal: 'left' }
-              : { vertical: 'center', horizontal: 'left' }
+              ? { vertical: 'top', horizontal: isRTL ? 'right' : 'left' }
+              : { vertical: 'center', horizontal: isRTL ? 'right' : 'left' }
           }
           PaperProps={{
             onMouseEnter: handleOpen,

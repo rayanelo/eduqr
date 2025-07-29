@@ -24,6 +24,7 @@ export default function NavToggleButton({ sx, ...other }) {
   const { themeLayout, onToggleLayout } = useSettingsContext();
 
   const isDesktop = useResponsive('up', 'lg');
+  const isRTL = theme.direction === 'rtl';
 
   if (!isDesktop) {
     return null;
@@ -37,7 +38,10 @@ export default function NavToggleButton({ sx, ...other }) {
         p: 0.5,
         top: 32,
         position: 'fixed',
-        left: NAV.W_DASHBOARD - 12,
+        ...(isRTL 
+          ? { right: NAV.W_DASHBOARD - 12 } 
+          : { left: NAV.W_DASHBOARD - 12 }
+        ),
         zIndex: theme.zIndex.appBar + 1,
         border: `dashed 1px ${theme.palette.divider}`,
         ...bgBlur({ opacity: 0.48, color: theme.palette.background.default }),

@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
 // @mui
 import { Box } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 // hooks
 import useResponsive from '../../hooks/useResponsive';
 // config
@@ -18,13 +19,13 @@ Main.propTypes = {
 };
 
 export default function Main({ children, sx, ...other }) {
+  const theme = useTheme();
   const { themeLayout } = useSettingsContext();
 
   const isNavHorizontal = themeLayout === 'horizontal';
-
   const isNavMini = themeLayout === 'mini';
-
   const isDesktop = useResponsive('up', 'lg');
+  const isRTL = theme.direction === 'rtl';
 
   if (isNavHorizontal) {
     return (
@@ -57,6 +58,10 @@ export default function Main({ children, sx, ...other }) {
           width: `calc(100% - ${NAV.W_DASHBOARD}px)`,
           ...(isNavMini && {
             width: `calc(100% - ${NAV.W_DASHBOARD_MINI}px)`,
+          }),
+          ...(isRTL && {
+            marginRight: 0,
+            marginLeft: 'auto',
           }),
         }),
         ...sx,

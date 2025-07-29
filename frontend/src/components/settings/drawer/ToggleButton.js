@@ -20,12 +20,13 @@ ToggleButton.propTypes = {
 
 export default function ToggleButton({ notDefault, open, onToggle }) {
   const theme = useTheme();
+  const isRTL = theme.direction === 'rtl';
 
   return (
     <Box
       sx={{
         p: 0.5,
-        right: 24,
+        ...(isRTL ? { left: 24 } : { right: 24 }),
         bottom: 24,
         zIndex: 999,
         position: 'fixed',
@@ -41,7 +42,7 @@ export default function ToggleButton({ notDefault, open, onToggle }) {
         <BadgeDot
           sx={{
             top: 8,
-            right: 10,
+            ...(isRTL ? { left: 10 } : { right: 10 }),
           }}
         />
       )}

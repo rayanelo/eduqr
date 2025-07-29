@@ -32,10 +32,9 @@ export default function Header({ onOpenNav }) {
   const { themeLayout } = useSettingsContext();
 
   const isNavHorizontal = themeLayout === 'horizontal';
-
   const isNavMini = themeLayout === 'mini';
-
   const isDesktop = useResponsive('up', 'lg');
+  const isRTL = theme.direction === 'rtl';
 
   const isOffset = useOffSetTop(HEADER.H_DASHBOARD_DESKTOP) && !isNavHorizontal;
 
@@ -95,6 +94,17 @@ export default function Header({ onOpenNav }) {
           }),
           ...(isNavMini && {
             width: `calc(100% - ${NAV.W_DASHBOARD_MINI + 1}px)`,
+          }),
+          ...(isRTL && {
+            ...(isNavHorizontal ? {} : {
+              ...(isNavMini ? {
+                marginRight: 0,
+                marginLeft: 'auto',
+              } : {
+                marginRight: 0,
+                marginLeft: 'auto',
+              }),
+            }),
           }),
         }),
       }}

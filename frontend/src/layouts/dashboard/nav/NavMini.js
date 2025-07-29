@@ -1,5 +1,6 @@
 // @mui
-import { Stack, Box } from '@mui/material';
+import { Stack, Box, Drawer } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 // config
 import { NAV } from '../../../config-global';
 // utils
@@ -14,7 +15,9 @@ import NavToggleButton from './NavToggleButton';
 // ----------------------------------------------------------------------
 
 export default function NavMini() {
+  const theme = useTheme();
   const navData = useNavData();
+  const isRTL = theme.direction === 'rtl';
   
   return (
     <Box
@@ -27,24 +30,41 @@ export default function NavMini() {
       <NavToggleButton
         sx={{
           top: 22,
-          left: NAV.W_DASHBOARD_MINI - 12,
+          ...(isRTL 
+            ? { right: NAV.W_DASHBOARD_MINI - 12 } 
+            : { left: NAV.W_DASHBOARD_MINI - 12 }
+          ),
         }}
       />
 
-      <Stack
-        sx={{
-          pb: 2,
-          height: 1,
-          position: 'fixed',
-          width: NAV.W_DASHBOARD_MINI,
-          borderRight: (theme) => `dashed 1px ${theme.palette.divider}`,
-          ...hideScrollbarX,
+      <Drawer
+        open
+        variant="permanent"
+        anchor={isRTL ? 'right' : 'left'}
+        PaperProps={{
+          sx: {
+            width: NAV.W_DASHBOARD_MINI,
+            bgcolor: 'transparent',
+            ...(isRTL 
+              ? { borderLeft: (theme) => `dashed 1px ${theme.palette.divider}` }
+              : { borderRight: (theme) => `dashed 1px ${theme.palette.divider}` }
+            ),
+          },
         }}
       >
-        <Logo sx={{ mx: 'auto', my: 2 }} />
+        <Stack
+          sx={{
+            pb: 2,
+            height: 1,
+            width: NAV.W_DASHBOARD_MINI,
+            ...hideScrollbarX,
+          }}
+        >
+          <Logo sx={{ mx: 'auto', my: 2 }} />
 
-        <NavSectionMini data={navData} />
-      </Stack>
+          <NavSectionMini data={navData} />
+        </Stack>
+      </Drawer>
     </Box>
   );
 }

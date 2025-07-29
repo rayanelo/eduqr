@@ -20,6 +20,7 @@ type Router struct {
 	subjectController  *controllers.SubjectController
 	courseController   *controllers.CourseController
 	auditLogController *controllers.AuditLogController
+	absenceController  *controllers.AbsenceController
 	authMiddleware     *middlewares.AuthMiddleware
 	auditMiddleware    *middlewares.AuditMiddleware
 }
@@ -31,6 +32,7 @@ func NewRouter(
 	subjectController *controllers.SubjectController,
 	courseController *controllers.CourseController,
 	auditLogController *controllers.AuditLogController,
+	absenceController *controllers.AbsenceController,
 	authMiddleware *middlewares.AuthMiddleware,
 	auditMiddleware *middlewares.AuditMiddleware,
 ) *Router {
@@ -41,6 +43,7 @@ func NewRouter(
 		subjectController:  subjectController,
 		courseController:   courseController,
 		auditLogController: auditLogController,
+		absenceController:  absenceController,
 		authMiddleware:     authMiddleware,
 		auditMiddleware:    auditMiddleware,
 	}
@@ -109,6 +112,21 @@ func (r *Router) SetupRoutes() *gin.Engine {
 			events.DELETE("/:id", r.eventController.DeleteEvent)
 		}
 
+		// Absence routes (authentication required)
+		absences := v1.Group("/absences")
+		absences.Use(r.authMiddleware.AuthMiddleware())
+		{
+			// Routes pour tous les utilisateurs authentifiés
+			absences.POST("", r.absenceController.CreateAbsence)                // Étudiants seulement
+			absences.GET("/my", r.absenceController.GetMyAbsences)              // Étudiants seulement
+			absences.GET("/teacher", r.absenceController.GetTeacherAbsences)    // Professeurs seulement
+			absences.GET("/stats", r.absenceController.GetAbsenceStats)         // Tous selon leur rôle
+			absences.GET("/filter", r.absenceController.GetAbsencesWithFilters) // Admins et professeurs
+			absences.GET("/:id", r.absenceController.GetAbsenceByID)            // Selon les permissions
+			absences.POST("/:id/review", r.absenceController.ReviewAbsence)     // Professeurs et admins
+			absences.DELETE("/:id", r.absenceController.DeleteAbsence)          // Selon les permissions
+		}
+
 		// Room routes (admin authentication required)
 		rooms := v1.Group("/admin/rooms")
 		rooms.Use(r.authMiddleware.AuthMiddleware())
@@ -146,6 +164,14 @@ func (r *Router) SetupRoutes() *gin.Engine {
 			courses.GET("/by-teacher/:teacherId", r.courseController.GetCoursesByTeacher)
 			courses.POST("/check-conflicts", r.courseController.CheckConflicts)
 			courses.POST("/:id/check-conflicts", r.courseController.CheckConflictsForUpdate)
+		}
+
+		// Admin absence routes (admin authentication required)
+		adminAbsences := v1.Group("/admin/absences")
+		adminAbsences.Use(r.authMiddleware.AuthMiddleware())
+		adminAbsences.Use(r.authMiddleware.RoleMiddleware("admin"))
+		{
+			adminAbsences.GET("", r.absenceController.GetAllAbsences)
 		}
 
 		// Routes de suppression sécurisées

@@ -57,6 +57,9 @@ export default function ContactsPopover() {
               <ListItemAvatar>
                 <CustomAvatar
                   src={contact.avatar}
+                  firstName={contact.name?.split(' ')[0] || ''}
+                  lastName={contact.name?.split(' ').slice(1).join(' ') || ''}
+                  role={contact.role || 'etudiant'}
                   BadgeProps={{
                     badgeContent: <BadgeStatus status={contact.status} />,
                   }}

@@ -21,13 +21,21 @@ const StyledRoot = styled('div')(({ theme }) => ({
 export default function NavAccount() {
   const { user } = useAuthContext();
 
+  const fullName = `${user?.first_name || ''} ${user?.last_name || ''}`.trim();
+
   return (
     <StyledRoot>
-      <CustomAvatar src={user?.photoURL} alt={user?.displayName} name={user?.displayName} />
+      <CustomAvatar 
+        src={user?.photoURL} 
+        alt={fullName} 
+        firstName={user?.first_name}
+        lastName={user?.last_name}
+        role={user?.role}
+      />
 
       <Box sx={{ ml: 2, minWidth: 0 }}>
         <Typography variant="subtitle2" noWrap>
-          {user?.displayName}
+          {fullName}
         </Typography>
 
         <Typography variant="body2" noWrap sx={{ color: 'text.secondary' }}>

@@ -31,7 +31,7 @@ func main() {
 	defer database.CloseDB()
 
 	// Auto migrate models
-	if err := database.AutoMigrate(&models.User{}, &models.Event{}, &models.Room{}, &models.Subject{}, &models.Course{}, &models.AuditLog{}); err != nil {
+	if err := database.AutoMigrate(&models.User{}, &models.Event{}, &models.Room{}, &models.Subject{}, &models.Course{}, &models.AuditLog{}, &models.Absence{}); err != nil {
 		log.Fatalf("Failed to auto migrate: %v", err)
 	}
 
@@ -42,6 +42,7 @@ func main() {
 	subjectRepo := repositories.NewSubjectRepository()
 	courseRepo := repositories.NewCourseRepository(database.GetDB())
 	auditLogRepo := repositories.NewAuditLogRepository()
+	absenceRepo := repositories.NewAbsenceRepository(database.GetDB())
 
 	// Parse JWT expiration
 	jwtExpiration, err := time.ParseDuration(cfg.JWT.Expiration)
@@ -56,6 +57,7 @@ func main() {
 	subjectService := services.NewSubjectService(subjectRepo)
 	courseService := services.NewCourseService(courseRepo, subjectRepo, userRepo, roomRepo)
 	auditLogService := services.NewAuditLogService(auditLogRepo)
+	absenceService := services.NewAbsenceService(absenceRepo, courseRepo, userRepo)
 
 	// Initialize controllers
 	userController := controllers.NewUserController(userService)
@@ -64,13 +66,14 @@ func main() {
 	subjectController := controllers.NewSubjectController(subjectService)
 	courseController := controllers.NewCourseController(courseService)
 	auditLogController := controllers.NewAuditLogController(auditLogService)
+	absenceController := controllers.NewAbsenceController(absenceService)
 
 	// Initialize middleware
 	authMiddleware := middlewares.NewAuthMiddleware(cfg.JWT.Secret)
 	auditMiddleware := middlewares.NewAuditMiddleware(auditLogService)
 
 	// Initialize router
-	router := routes.NewRouter(userController, eventController, roomController, subjectController, courseController, auditLogController, authMiddleware, auditMiddleware)
+	router := routes.NewRouter(userController, eventController, roomController, subjectController, courseController, auditLogController, absenceController, authMiddleware, auditMiddleware)
 	app := router.SetupRoutes()
 
 	// Create server

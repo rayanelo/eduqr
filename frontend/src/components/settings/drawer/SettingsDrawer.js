@@ -39,6 +39,7 @@ export default function SettingsDrawer() {
   } = useSettingsContext();
 
   const theme = useTheme();
+  const isRTL = theme.direction === 'rtl';
 
   const [open, setOpen] = useState(false);
 
@@ -63,7 +64,7 @@ export default function SettingsDrawer() {
       {!open && <ToggleButton open={open} notDefault={notDefault} onToggle={handleToggle} />}
 
       <Drawer
-        anchor="right"
+        anchor={isRTL ? 'left' : 'right'}
         open={open}
         onClose={handleClose}
         BackdropProps={{ invisible: true }}
@@ -71,10 +72,15 @@ export default function SettingsDrawer() {
           sx: {
             ...bgBlur({ color: theme.palette.background.default, opacity: 0.9 }),
             width: NAV.W_BASE,
-            boxShadow: `-24px 12px 40px 0 ${alpha(
-              theme.palette.mode === 'light' ? theme.palette.grey[500] : theme.palette.common.black,
-              0.16
-            )}`,
+            boxShadow: isRTL 
+              ? `24px 12px 40px 0 ${alpha(
+                  theme.palette.mode === 'light' ? theme.palette.grey[500] : theme.palette.common.black,
+                  0.16
+                )}`
+              : `-24px 12px 40px 0 ${alpha(
+                  theme.palette.mode === 'light' ? theme.palette.grey[500] : theme.palette.common.black,
+                  0.16
+                )}`,
           },
         }}
       >

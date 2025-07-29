@@ -10,7 +10,6 @@ import {
   InputAdornment,
   Grid,
   Alert,
-  Avatar,
   Chip,
   IconButton,
   Tooltip,
@@ -31,6 +30,7 @@ import { DataTable } from '../../components/data-table';
 import UserForm from '../../components/user-form/UserForm';
 import DeleteConfirmDialog from '../../components/confirm-dialog/DeleteConfirmDialog';
 import UserInfo from '../../components/user-info/UserInfo';
+import { CustomAvatar } from '../../components/custom-avatar';
 
 // ----------------------------------------------------------------------
 
@@ -78,10 +78,11 @@ const getTableColumns = (permissions) => [
     label: 'Avatar',
     align: 'center',
     width: 80,
-    render: (value) => (
-      <Avatar
-        src={value}
-        alt="Avatar"
+    render: (value, row) => (
+      <CustomAvatar
+        firstName={row.first_name}
+        lastName={row.last_name}
+        role={row.role}
         sx={{ width: 40, height: 40 }}
       />
     ),
@@ -192,7 +193,6 @@ export default function UserManagementPage() {
   const [filterName, setFilterName] = useState('');
   const [openForm, setOpenForm] = useState(false);
   const [openConfirm, setOpenConfirm] = useState(false);
-  const [openUserInfo, setOpenUserInfo] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [deleteConflicts, setDeleteConflicts] = useState([]);
   const [futureCourses, setFutureCourses] = useState([]);
@@ -307,7 +307,8 @@ export default function UserManagementPage() {
     const user = users.find((u) => u.id === id);
     if (canViewUser(user)) {
       setSelectedUser(user);
-      setOpenUserInfo(true);
+      // TODO: Implémenter l'affichage des détails utilisateur
+      enqueueSnackbar('Fonctionnalité en cours de développement', { variant: 'info' });
     } else {
       enqueueSnackbar('Vous n\'avez pas les permissions pour voir cet utilisateur', { variant: 'error' });
     }

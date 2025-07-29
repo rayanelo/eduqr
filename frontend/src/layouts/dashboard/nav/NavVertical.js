@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 // @mui
 import { Box, Stack, Drawer } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 // hooks
 import useResponsive from '../../../hooks/useResponsive';
 // config
@@ -26,9 +27,11 @@ NavVertical.propTypes = {
 
 export default function NavVertical({ openNav, onCloseNav }) {
   const { pathname } = useLocation();
+  const theme = useTheme();
   const navData = useNavData();
 
   const isDesktop = useResponsive('up', 'lg');
+  const isRTL = theme.direction === 'rtl';
 
   useEffect(() => {
     if (openNav) {
@@ -84,12 +87,13 @@ export default function NavVertical({ openNav, onCloseNav }) {
         <Drawer
           open
           variant="permanent"
+          anchor={isRTL ? 'right' : 'left'}
           PaperProps={{
             sx: {
               zIndex: 0,
               width: NAV.W_DASHBOARD,
               bgcolor: 'transparent',
-              borderRightStyle: 'dashed',
+              ...(isRTL ? { borderLeftStyle: 'dashed' } : { borderRightStyle: 'dashed' }),
             },
           }}
         >
@@ -99,6 +103,7 @@ export default function NavVertical({ openNav, onCloseNav }) {
         <Drawer
           open={openNav}
           onClose={onCloseNav}
+          anchor={isRTL ? 'right' : 'left'}
           ModalProps={{
             keepMounted: true,
           }}

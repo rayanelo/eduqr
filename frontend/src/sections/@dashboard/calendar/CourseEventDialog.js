@@ -15,7 +15,6 @@ import {
   Chip,
   Stack,
   TextField,
-  Avatar,
   Grid,
   Card,
   CardContent,
@@ -26,6 +25,7 @@ import { usePermissions } from '../../../hooks/usePermissions';
 // components
 import Iconify from '../../../components/iconify';
 import apiClient from '../../../utils/api';
+import { CustomAvatar } from '../../../components/custom-avatar';
 
 // ----------------------------------------------------------------------
 
@@ -330,9 +330,11 @@ export default function CourseEventDialog({ open, onClose, event, onUpdate, onDe
                       Professeur
                     </Typography>
                     <Box display="flex" alignItems="center" gap={1.5}>
-                      <Avatar
+                      <CustomAvatar
                         src={course?.teacher?.avatar_url || '/assets/images/avatars/default-avatar.png'}
-                        alt={event.extendedProps.teacher}
+                        firstName={course?.teacher?.first_name}
+                        lastName={course?.teacher?.last_name}
+                        role={course?.teacher?.role}
                         sx={{ width: 36, height: 36 }}
                       />
                       <Box>

@@ -20,6 +20,9 @@ import CourseManagementPage from '../pages/dashboard/CourseManagementPage';
 import ProfilePage from '../pages/dashboard/ProfilePage';
 import CalendarPage from '../pages/dashboard/CalendarPage';
 import AuditLogPage from '../pages/dashboard/AuditLogPage';
+import AbsenceManagementPage from '../pages/dashboard/AbsenceManagementPage';
+import TeacherAbsencePage from '../pages/dashboard/TeacherAbsencePage';
+import AdminAbsencePage from '../pages/dashboard/AdminAbsencePage';
 
 // ----------------------------------------------------------------------
 
@@ -41,6 +44,9 @@ export default function Router() {
         { path: 'profile', element: <ProfilePage /> },
         { path: 'calendar', element: <CalendarPage /> },
         { path: 'audit-logs', element: <AuditLogPage /> },
+        { path: 'my-absences', element: <AbsenceManagementPage /> },
+        { path: 'teacher-absences', element: <TeacherAbsencePage /> },
+        { path: 'admin-absences', element: <AdminAbsencePage /> },
         { path: 'five', element: <PageFive /> },
         { path: 'six', element: <PageSix /> },
       ],

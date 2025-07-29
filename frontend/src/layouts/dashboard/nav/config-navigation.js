@@ -11,7 +11,7 @@ import SvgColor from '../../../components/svg-color';
 
 export function useNavData() {
   const { translate } = useLocales();
-  const { canManageUsers, canManageRooms, canManageSubjects, canAccessAuditLogs } = usePermissions();
+  const { canManageUsers, canManageRooms, canManageSubjects, canAccessAuditLogs, canManageAbsences, canViewAbsences, canSubmitAbsences } = usePermissions();
 
   const data = useMemo(
     () => [
@@ -79,10 +79,37 @@ export function useNavData() {
                 },
               ]
             : []),
+          ...(canSubmitAbsences
+            ? [
+                {
+                  title: 'Mes Absences',
+                  path: '/dashboard/my-absences',
+                  icon: <SvgColor src="/assets/icons/navbar/ic_user.svg" />,
+                },
+              ]
+            : []),
+          ...(canViewAbsences && !canManageAbsences
+            ? [
+                {
+                  title: 'Absences à Traiter',
+                  path: '/dashboard/teacher-absences',
+                  icon: <SvgColor src="/assets/icons/navbar/ic_analytics.svg" />,
+                },
+              ]
+            : []),
+          ...(canManageAbsences
+            ? [
+                {
+                  title: 'Gestion des Absences',
+                  path: '/dashboard/admin-absences',
+                  icon: <SvgColor src="/assets/icons/navbar/ic_analytics.svg" />,
+                },
+              ]
+            : []),
         ],
       },
     ],
-    [translate, canManageUsers, canManageRooms, canManageSubjects, canAccessAuditLogs]
+    [translate, canManageUsers, canManageRooms, canManageSubjects, canAccessAuditLogs, canManageAbsences, canViewAbsences, canSubmitAbsences]
   );
 
   return data;

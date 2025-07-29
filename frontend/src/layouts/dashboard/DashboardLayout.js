@@ -23,7 +23,6 @@ export default function DashboardLayout() {
   const [open, setOpen] = useState(false);
 
   const isNavHorizontal = themeLayout === 'horizontal';
-
   const isNavMini = themeLayout === 'mini';
 
   const handleOpen = () => {

@@ -17,6 +17,11 @@ export const usePermissions = () => {
   const canManageSubjects = user?.role === ROLES.SUPER_ADMIN || user?.role === ROLES.ADMIN;
   const canManageCourses = user?.role === ROLES.SUPER_ADMIN || user?.role === ROLES.ADMIN;
   const canAccessAuditLogs = user?.role === ROLES.SUPER_ADMIN || user?.role === ROLES.ADMIN;
+  
+  // Absence management permissions
+  const canManageAbsences = user?.role === ROLES.SUPER_ADMIN || user?.role === ROLES.ADMIN;
+  const canViewAbsences = user?.role === ROLES.SUPER_ADMIN || user?.role === ROLES.ADMIN || user?.role === ROLES.PROFESSEUR;
+  const canSubmitAbsences = user?.role === ROLES.ETUDIANT;
 
   // Vérifier si l'utilisateur peut supprimer des éléments
   const canDelete = () => {
@@ -141,6 +146,9 @@ export const usePermissions = () => {
     canManageSubjects,
     canManageCourses,
     canAccessAuditLogs,
+    canManageAbsences,
+    canViewAbsences,
+    canSubmitAbsences,
     canDelete,
     canDeleteUser,
     canDeleteRoom,

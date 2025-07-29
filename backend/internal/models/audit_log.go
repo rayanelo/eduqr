@@ -23,6 +23,7 @@ const (
 	ResourceSubject = "subject"
 	ResourceCourse  = "course"
 	ResourceEvent   = "event"
+	ResourceAbsence = "absence"
 )
 
 // AuditLog represents an audit log entry

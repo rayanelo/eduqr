@@ -3,13 +3,13 @@ import {
   Box,
   Card,
   Stack,
-  Avatar,
   Typography,
   Chip,
 } from '@mui/material';
 // components
 import { useAuthContext } from '../../auth/JwtContext';
 import { usePermissions, ROLES } from '../../hooks/usePermissions';
+import { CustomAvatar } from '../custom-avatar';
 
 // ----------------------------------------------------------------------
 
@@ -56,9 +56,11 @@ export default function UserInfo() {
   return (
     <Card sx={{ p: 1.5, mb: 1.5 }}>
       <Stack direction="row" alignItems="center" spacing={1}>
-        <Avatar
+        <CustomAvatar
           src={user.avatar || '/assets/images/avatars/default-avatar.png'}
-          alt={user.first_name}
+          firstName={user.first_name}
+          lastName={user.last_name}
+          role={user.role}
           sx={{ width: 40, height: 40 }}
         />
         
