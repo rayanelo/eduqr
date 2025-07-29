@@ -21,7 +21,7 @@ import Iconify from '../../../components/iconify';
 import { IconButtonAnimate } from '../../../components/animate';
 import SearchNotFound from '../../../components/search-not-found';
 //
-import NavConfig from '../nav/config-navigation';
+import { useNavData } from '../nav/config-navigation';
 
 // ----------------------------------------------------------------------
 
@@ -89,12 +89,12 @@ const StyledPopper = styled((props) => <Popper {...props} />)(({ theme }) => ({
 
 function Searchbar() {
   const navigate = useNavigate();
-
   const { pathname } = useLocation();
-
   const [open, setOpen] = useState(false);
-
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Utiliser useNavData() pour obtenir la configuration dynamique
+  const NavConfig = useNavData();
 
   const reduceItems = NavConfig.map((list) => handleLoop(list.items, list.subheader)).flat();
 
