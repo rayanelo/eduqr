@@ -14,12 +14,14 @@ import (
 )
 
 type Router struct {
-	userController    *controllers.UserController
-	eventController   *controllers.EventController
-	roomController    *controllers.RoomController
-	subjectController *controllers.SubjectController
-	courseController  *controllers.CourseController
-	authMiddleware    *middlewares.AuthMiddleware
+	userController     *controllers.UserController
+	eventController    *controllers.EventController
+	roomController     *controllers.RoomController
+	subjectController  *controllers.SubjectController
+	courseController   *controllers.CourseController
+	auditLogController *controllers.AuditLogController
+	authMiddleware     *middlewares.AuthMiddleware
+	auditMiddleware    *middlewares.AuditMiddleware
 }
 
 func NewRouter(
@@ -28,15 +30,19 @@ func NewRouter(
 	roomController *controllers.RoomController,
 	subjectController *controllers.SubjectController,
 	courseController *controllers.CourseController,
+	auditLogController *controllers.AuditLogController,
 	authMiddleware *middlewares.AuthMiddleware,
+	auditMiddleware *middlewares.AuditMiddleware,
 ) *Router {
 	return &Router{
-		userController:    userController,
-		eventController:   eventController,
-		roomController:    roomController,
-		subjectController: subjectController,
-		courseController:  courseController,
-		authMiddleware:    authMiddleware,
+		userController:     userController,
+		eventController:    eventController,
+		roomController:     roomController,
+		subjectController:  subjectController,
+		courseController:   courseController,
+		auditLogController: auditLogController,
+		authMiddleware:     authMiddleware,
+		auditMiddleware:    auditMiddleware,
 	}
 }
 
@@ -68,7 +74,7 @@ func (r *Router) SetupRoutes() *gin.Engine {
 		auth := v1.Group("/auth")
 		{
 			auth.POST("/register", r.userController.Register)
-			auth.POST("/login", r.userController.Login)
+			auth.POST("/login", r.auditMiddleware.AuditLoginMiddleware(), r.userController.Login)
 		}
 
 		// User routes (authentication required)
@@ -161,6 +167,20 @@ func (r *Router) SetupRoutes() *gin.Engine {
 
 		// Suppression de cours (Admin/Super Admin seulement)
 		v1.DELETE("/admin/courses/:id", r.authMiddleware.AuthMiddleware(), r.authMiddleware.CanDeleteMiddleware("course"), deletionController.DeleteCourse)
+
+		// Audit Log routes (Admin/Super Admin only)
+		auditLogs := v1.Group("/admin/audit-logs")
+		auditLogs.Use(r.authMiddleware.AuthMiddleware())
+		auditLogs.Use(r.authMiddleware.RoleMiddleware("admin"))
+		{
+			auditLogs.GET("", r.auditLogController.GetAuditLogs)
+			auditLogs.GET("/stats", r.auditLogController.GetAuditLogStats)
+			auditLogs.GET("/recent", r.auditLogController.GetRecentAuditLogs)
+			auditLogs.GET("/:id", r.auditLogController.GetAuditLogByID)
+			auditLogs.GET("/user/:user_id/activity", r.auditLogController.GetUserActivity)
+			auditLogs.GET("/resource/:resource_type/:resource_id", r.auditLogController.GetResourceHistory)
+			auditLogs.DELETE("/clean", r.auditLogController.CleanOldLogs)
+		}
 	}
 
 	return router

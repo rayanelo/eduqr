@@ -1,5 +1,5 @@
 // @mui
-import { Alert, Tooltip, Stack, Typography, Link, Box } from '@mui/material';
+import { Tooltip, Stack, Typography, Link, Box } from '@mui/material';
 // auth
 import { useAuthContext } from '../../auth/useAuthContext';
 // layouts
@@ -35,21 +35,7 @@ export default function Login() {
           />
         </Tooltip>
       </Stack>
-
-      {/* <Alert severity="info" sx={{ mb: 3 }}>
-        <Typography variant="body2" sx={{ mb: 1 }}>
-          <strong>Compte de test disponible :</strong>
-        </Typography>
-        <Typography variant="body2" sx={{ mb: 0.5 }}>
-          • Admin: <strong>admin@eduqr.com</strong> / <strong>admin123456</strong>
-        </Typography>
-        <Typography variant="body2">
-          Créez votre propre compte ou utilisez celui-ci pour tester l'application.
-        </Typography>
-      </Alert> */}
-
       <AuthLoginForm />
-
       <AuthWithSocial />
     </LoginLayout>
   );

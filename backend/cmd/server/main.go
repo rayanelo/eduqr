@@ -31,7 +31,7 @@ func main() {
 	defer database.CloseDB()
 
 	// Auto migrate models
-	if err := database.AutoMigrate(&models.User{}, &models.Event{}, &models.Room{}, &models.Subject{}, &models.Course{}); err != nil {
+	if err := database.AutoMigrate(&models.User{}, &models.Event{}, &models.Room{}, &models.Subject{}, &models.Course{}, &models.AuditLog{}); err != nil {
 		log.Fatalf("Failed to auto migrate: %v", err)
 	}
 
@@ -41,6 +41,7 @@ func main() {
 	roomRepo := repositories.NewRoomRepository(database.GetDB())
 	subjectRepo := repositories.NewSubjectRepository()
 	courseRepo := repositories.NewCourseRepository(database.GetDB())
+	auditLogRepo := repositories.NewAuditLogRepository()
 
 	// Parse JWT expiration
 	jwtExpiration, err := time.ParseDuration(cfg.JWT.Expiration)
@@ -54,6 +55,7 @@ func main() {
 	roomService := services.NewRoomService(roomRepo)
 	subjectService := services.NewSubjectService(subjectRepo)
 	courseService := services.NewCourseService(courseRepo, subjectRepo, userRepo, roomRepo)
+	auditLogService := services.NewAuditLogService(auditLogRepo)
 
 	// Initialize controllers
 	userController := controllers.NewUserController(userService)
@@ -61,12 +63,14 @@ func main() {
 	roomController := controllers.NewRoomController(roomService)
 	subjectController := controllers.NewSubjectController(subjectService)
 	courseController := controllers.NewCourseController(courseService)
+	auditLogController := controllers.NewAuditLogController(auditLogService)
 
 	// Initialize middleware
 	authMiddleware := middlewares.NewAuthMiddleware(cfg.JWT.Secret)
+	auditMiddleware := middlewares.NewAuditMiddleware(auditLogService)
 
 	// Initialize router
-	router := routes.NewRouter(userController, eventController, roomController, subjectController, courseController, authMiddleware)
+	router := routes.NewRouter(userController, eventController, roomController, subjectController, courseController, auditLogController, authMiddleware, auditMiddleware)
 	app := router.SetupRoutes()
 
 	// Create server

@@ -19,6 +19,7 @@ import SubjectManagementPage from '../pages/dashboard/SubjectManagementPage';
 import CourseManagementPage from '../pages/dashboard/CourseManagementPage';
 import ProfilePage from '../pages/dashboard/ProfilePage';
 import CalendarPage from '../pages/dashboard/CalendarPage';
+import AuditLogPage from '../pages/dashboard/AuditLogPage';
 
 // ----------------------------------------------------------------------
 
@@ -39,6 +40,7 @@ export default function Router() {
         { path: 'course-management', element: <CourseManagementPage /> },
         { path: 'profile', element: <ProfilePage /> },
         { path: 'calendar', element: <CalendarPage /> },
+        { path: 'audit-logs', element: <AuditLogPage /> },
         { path: 'five', element: <PageFive /> },
         { path: 'six', element: <PageSix /> },
       ],

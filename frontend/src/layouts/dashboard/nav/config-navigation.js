@@ -13,7 +13,7 @@ import SvgColor from '../../../components/svg-color';
 
 export function useNavData() {
   const { translate } = useLocales();
-  const { canManageUsers, canManageRooms, canManageSubjects } = usePermissions();
+  const { canManageUsers, canManageRooms, canManageSubjects, canAccessAuditLogs } = usePermissions();
 
   const data = useMemo(
     () => [
@@ -72,10 +72,19 @@ export function useNavData() {
                 },
               ]
             : []),
+          ...(canAccessAuditLogs
+            ? [
+                {
+                  title: 'Journal d\'Activité',
+                  path: '/dashboard/audit-logs',
+                  icon: <SvgColor src="/assets/icons/navbar/ic_analytics.svg" />,
+                },
+              ]
+            : []),
         ],
       },
     ],
-    [translate, canManageUsers, canManageRooms, canManageSubjects]
+    [translate, canManageUsers, canManageRooms, canManageSubjects, canAccessAuditLogs]
   );
 
   return data;

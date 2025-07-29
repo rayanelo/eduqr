@@ -16,6 +16,7 @@ export const usePermissions = () => {
   const canManageRooms = user?.role === ROLES.SUPER_ADMIN || user?.role === ROLES.ADMIN;
   const canManageSubjects = user?.role === ROLES.SUPER_ADMIN || user?.role === ROLES.ADMIN;
   const canManageCourses = user?.role === ROLES.SUPER_ADMIN || user?.role === ROLES.ADMIN;
+  const canAccessAuditLogs = user?.role === ROLES.SUPER_ADMIN || user?.role === ROLES.ADMIN;
 
   // Vérifier si l'utilisateur peut supprimer des éléments
   const canDelete = () => {
@@ -139,6 +140,7 @@ export const usePermissions = () => {
     canManageRooms,
     canManageSubjects,
     canManageCourses,
+    canAccessAuditLogs,
     canDelete,
     canDeleteUser,
     canDeleteRoom,

@@ -28,5 +28,6 @@ export { default as SubjectManagementPage } from '../pages/dashboard/SubjectMana
 export { default as CourseManagementPage } from '../pages/dashboard/CourseManagementPage';
 export { default as ProfilePage } from '../pages/dashboard/ProfilePage';
 export { default as CalendarPage } from '../pages/dashboard/CalendarPage';
+export { default as AuditLogPage } from '../pages/dashboard/AuditLogPage';
 
 export const Page404 = Loadable(lazy(() => import('../pages/Page404')));

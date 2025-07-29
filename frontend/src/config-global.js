@@ -33,6 +33,7 @@ export const EDUQR_API = {
       delete: (id) => `/api/v1/events/${id}`,
       range: '/api/v1/events/range',
     },
+    auditLogs: '/api/v1/admin/audit-logs',
   },
 };
 
