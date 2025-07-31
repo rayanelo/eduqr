@@ -1,38 +1,29 @@
-# Build stage
+# Étape 1 : Compilation avec Go 1.23
 FROM golang:1.23-alpine AS builder
 
-# Set working directory
 WORKDIR /app
 
-# Copy go mod files
+# Copier les fichiers de dépendances
 COPY go.mod go.sum ./
-
-# Download dependencies
 RUN go mod download
 
-# Copy source code
+# Copier le reste du code
 COPY . .
 
-# Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/server
+# Compiler le binaire
+RUN go build -o main ./cmd/server
 
-# Final stage
+# Étape 2 : Image finale légère
 FROM alpine:latest
 
-# Install ca-certificates for HTTPS requests
-RUN apk --no-cache add ca-certificates
+# Installer curl pour les health checks
+RUN apk add --no-cache curl
 
-# Set working directory
 WORKDIR /root/
 
-# Copy the binary from builder stage
+# Copier le binaire compilé
 COPY --from=builder /app/main .
 
-# Copy .env file
-COPY --from=builder /app/.env .
+EXPOSE 8080
 
-# Expose port
-EXPOSE 8081
-
-# Run the application
 CMD ["./main"] 
