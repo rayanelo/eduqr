@@ -306,6 +306,13 @@ func (r *CourseRepository) GenerateRecurringCourses(parentCourse *models.Course)
 		// Vérifier si ce jour est dans le pattern
 		for _, day := range pattern.Days {
 			if day == weekday {
+				// Éviter de créer un doublon pour la date du cours parent
+				if currentDate.Equal(parentCourse.StartTime) {
+					// Passer au jour suivant
+					currentDate = currentDate.AddDate(0, 0, 1)
+					continue
+				}
+
 				// Créer un cours pour ce jour
 				course := *parentCourse
 				course.ID = 0 // Nouveau cours
