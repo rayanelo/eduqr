@@ -20,7 +20,7 @@ services:
   # Backend API (Go)
   backend:
     build:
-      context: ./eduqr
+      context: ./eduqr-backend
       dockerfile: Dockerfile
     container_name: eduqr-backend
     environment:
@@ -64,7 +64,7 @@ services:
   # Service de peuplement de données
   seed:
     build:
-      context: ./eduqr
+      context: ./eduqr-backend
       dockerfile: Dockerfile
     command: go run cmd/seed_all/main.go
     environment:
