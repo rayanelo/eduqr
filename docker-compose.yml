@@ -1,0 +1,92 @@
+version: '3.8'
+
+services:
+  # Base de données PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    container_name: eduqr-postgres
+    environment:
+      POSTGRES_DB: eduqr
+      POSTGRES_USER: eduqr_user
+      POSTGRES_PASSWORD: eduqr_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - eduqr_network
+    restart: unless-stopped
+
+  # Backend API (Go)
+  backend:
+    build:
+      context: ./eduqr
+      dockerfile: Dockerfile
+    container_name: eduqr-backend
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=eduqr
+      - DB_USER=eduqr_user
+      - DB_PASSWORD=eduqr_password
+      - SERVER_HOST=0.0.0.0
+      - SERVER_PORT=8080
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
+      - JWT_EXPIRATION=24h
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    networks:
+      - eduqr_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Frontend React App
+  frontend:
+    build:
+      context: ./eduqr-frontend
+      dockerfile: Dockerfile
+    container_name: eduqr-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - eduqr_network
+    restart: unless-stopped
+
+  # Service de peuplement de données
+  seed-data:
+    build:
+      context: ./eduqr
+      dockerfile: Dockerfile.seed
+    container_name: eduqr-seed-data
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=eduqr
+      - DB_USER=eduqr_user
+      - DB_PASSWORD=eduqr_password
+      - SERVER_HOST=0.0.0.0
+      - SERVER_PORT=8080
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
+      - JWT_EXPIRATION=24h
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - eduqr_network
+    restart: "no"
+
+volumes:
+  postgres_data:
+
+networks:
+  eduqr_network:
+    driver: bridge
