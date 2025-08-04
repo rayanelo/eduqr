@@ -20,7 +20,7 @@ services:
   # Backend API (Go)
   backend:
     build:
-      context: ./eduqr-backend
+      context: ./eduqr
       dockerfile: Dockerfile
     container_name: eduqr-backend
     environment:
@@ -30,18 +30,18 @@ services:
       - DB_USER=eduqr_user
       - DB_PASSWORD=eduqr_password
       - SERVER_HOST=0.0.0.0
-      - SERVER_PORT=8080
+      - SERVER_PORT=8081
       - JWT_SECRET=your-super-secret-jwt-key-change-in-production
       - JWT_EXPIRATION=24h
     ports:
-      - "8080:8080"
+      - "8081:8081"
     depends_on:
       - postgres
     networks:
       - eduqr_network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -62,11 +62,11 @@ services:
     restart: unless-stopped
 
   # Service de peuplement de données
-  seed-data:
+  seed:
     build:
-      context: ./eduqr-backend
-      dockerfile: Dockerfile.seed
-    container_name: eduqr-seed-data
+      context: ./eduqr
+      dockerfile: Dockerfile
+    command: go run cmd/seed_all/main.go
     environment:
       - DB_HOST=postgres
       - DB_PORT=5432
@@ -74,12 +74,11 @@ services:
       - DB_USER=eduqr_user
       - DB_PASSWORD=eduqr_password
       - SERVER_HOST=0.0.0.0
-      - SERVER_PORT=8080
+      - SERVER_PORT=8081
       - JWT_SECRET=your-super-secret-jwt-key-change-in-production
       - JWT_EXPIRATION=24h
     depends_on:
-      backend:
-        condition: service_healthy
+      - backend
     networks:
       - eduqr_network
     restart: "no"
