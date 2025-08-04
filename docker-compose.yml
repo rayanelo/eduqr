@@ -66,7 +66,8 @@ services:
     build:
       context: ./eduqr-backend
       dockerfile: Dockerfile
-    command: ./seed_all
+      target: builder
+    command: go run cmd/seed_all/main.go
     environment:
       - DB_HOST=postgres
       - DB_PORT=5432
