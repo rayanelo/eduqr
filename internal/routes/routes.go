@@ -201,7 +201,8 @@ func (r *Router) SetupRoutes() *gin.Engine {
 			publicCourses.GET("/by-teacher/:teacherId", r.courseController.GetCoursesByTeacher)
 			publicCourses.GET("/by-room/:roomId", r.courseController.GetCoursesByRoom)
 
-			// Routes pour les professeurs (modification de leurs propres cours)
+			// Routes pour les professeurs (création et modification de leurs propres cours)
+			publicCourses.POST("", r.auditMiddleware.AuditMiddleware("create", "course"), r.courseController.CreateCourse)
 			publicCourses.PUT("/:id", r.auditMiddleware.AuditMiddleware("update", "course"), r.courseController.UpdateCourse)
 			publicCourses.DELETE("/:id", r.auditMiddleware.AuditMiddleware("delete", "course"), r.courseController.DeleteCourse)
 		}

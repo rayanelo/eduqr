@@ -57,3 +57,18 @@ func (r *UserRepository) FindAll() ([]models.User, error) {
 func (r *UserRepository) DeleteUser(id uint) error {
 	return r.db.Delete(&models.User{}, id).Error
 }
+
+// CreateUser alias pour Create
+func (r *UserRepository) CreateUser(user *models.User) error {
+	return r.Create(user)
+}
+
+// GetUserByID alias pour FindByID
+func (r *UserRepository) GetUserByID(id uint) (*models.User, error) {
+	return r.FindByID(id)
+}
+
+// GetUserByEmail alias pour FindByEmail
+func (r *UserRepository) GetUserByEmail(email string) (*models.User, error) {
+	return r.FindByEmail(email)
+}

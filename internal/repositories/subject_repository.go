@@ -44,6 +44,16 @@ func (r *SubjectRepository) GetSubjectByName(name string) (*models.Subject, erro
 	return &subject, nil
 }
 
+// GetSubjectByCode récupère une matière par son code
+func (r *SubjectRepository) GetSubjectByCode(code string) (*models.Subject, error) {
+	var subject models.Subject
+	err := r.db.Where("code = ?", code).First(&subject).Error
+	if err != nil {
+		return nil, err
+	}
+	return &subject, nil
+}
+
 // CreateSubject crée une nouvelle matière
 func (r *SubjectRepository) CreateSubject(subject *models.Subject) error {
 	return r.db.Create(subject).Error
@@ -77,4 +87,17 @@ func (r *SubjectRepository) CheckSubjectInUse(id uint) (bool, error) {
 	// TODO: Implémenter quand la table des cours sera créée
 	// Pour l'instant, on retourne false
 	return false, nil
+}
+
+// CheckSubjectCodeExists vérifie si une matière existe déjà avec le même code
+func (r *SubjectRepository) CheckSubjectCodeExists(code string, excludeID *uint) (bool, error) {
+	var count int64
+	query := r.db.Model(&models.Subject{}).Where("code = ?", code)
+
+	if excludeID != nil {
+		query = query.Where("id != ?", *excludeID)
+	}
+
+	err := query.Count(&count).Error
+	return count > 0, err
 }

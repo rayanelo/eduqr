@@ -50,7 +50,7 @@ func main() {
 
 		var result int64
 		if err := db.Raw(query).Scan(&result).Error; err != nil {
-			log.Printf("⚠️  Erreur lors de l'exécution de la requête %d: %v", err)
+			log.Printf("⚠️  Erreur lors de l'exécution de la requête %d: %v", i+1, err)
 			log.Printf("   Requête: %s", query)
 		} else {
 			log.Printf("✅ Séquence réinitialisée, prochain ID: %d", result)

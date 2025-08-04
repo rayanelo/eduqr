@@ -14,7 +14,7 @@ func TestSubjectRepository(t *testing.T) {
 	cleanupTestDatabase()
 
 	t.Run("CreateSubject_Success", func(t *testing.T) {
-		repo := repositories.NewSubjectRepository(testDB)
+		repo := repositories.NewSubjectRepository()
 
 		subject := &models.Subject{
 			Name:        "Test Subject",
@@ -30,7 +30,7 @@ func TestSubjectRepository(t *testing.T) {
 	})
 
 	t.Run("CreateSubject_DuplicateName_ShouldFail", func(t *testing.T) {
-		repo := repositories.NewSubjectRepository(testDB)
+		repo := repositories.NewSubjectRepository()
 
 		// Créer la première matière
 		subject1 := &models.Subject{
@@ -52,7 +52,7 @@ func TestSubjectRepository(t *testing.T) {
 	})
 
 	t.Run("CreateSubject_DuplicateCode_ShouldFail", func(t *testing.T) {
-		repo := repositories.NewSubjectRepository(testDB)
+		repo := repositories.NewSubjectRepository()
 
 		// Créer la première matière
 		subject1 := &models.Subject{
@@ -74,7 +74,7 @@ func TestSubjectRepository(t *testing.T) {
 	})
 
 	t.Run("GetSubjectByID_Success", func(t *testing.T) {
-		repo := repositories.NewSubjectRepository(testDB)
+		repo := repositories.NewSubjectRepository()
 
 		// Créer une matière
 		subject := createTestSubject()
@@ -88,7 +88,7 @@ func TestSubjectRepository(t *testing.T) {
 	})
 
 	t.Run("GetSubjectByID_NotFound", func(t *testing.T) {
-		repo := repositories.NewSubjectRepository(testDB)
+		repo := repositories.NewSubjectRepository()
 
 		// Essayer de récupérer une matière inexistante
 		_, err := repo.GetSubjectByID(99999)
@@ -96,7 +96,7 @@ func TestSubjectRepository(t *testing.T) {
 	})
 
 	t.Run("GetSubjectByCode_Success", func(t *testing.T) {
-		repo := repositories.NewSubjectRepository(testDB)
+		repo := repositories.NewSubjectRepository()
 
 		// Créer une matière
 		subject := createTestSubject()
@@ -109,7 +109,7 @@ func TestSubjectRepository(t *testing.T) {
 	})
 
 	t.Run("GetSubjectByCode_NotFound", func(t *testing.T) {
-		repo := repositories.NewSubjectRepository(testDB)
+		repo := repositories.NewSubjectRepository()
 
 		// Essayer de récupérer une matière avec un code inexistant
 		_, err := repo.GetSubjectByCode("NONEXISTENT")
@@ -117,7 +117,7 @@ func TestSubjectRepository(t *testing.T) {
 	})
 
 	t.Run("GetAllSubjects_Success", func(t *testing.T) {
-		repo := repositories.NewSubjectRepository(testDB)
+		repo := repositories.NewSubjectRepository()
 
 		// Créer plusieurs matières
 		createTestSubject()
@@ -125,30 +125,15 @@ func TestSubjectRepository(t *testing.T) {
 		createTestSubject()
 
 		// Récupérer toutes les matières
-		subjects, err := repo.GetAllSubjects(nil)
+		subjects, err := repo.GetAllSubjects()
 		assert.NoError(t, err)
 		assert.Len(t, subjects, 3)
 	})
 
-	t.Run("GetAllSubjects_WithNameFilter", func(t *testing.T) {
-		repo := repositories.NewSubjectRepository(testDB)
 
-		// Créer des matières avec différents noms
-		subject1 := &models.Subject{Name: "Math", Code: "MATH001", Description: "Mathematics"}
-		subject2 := &models.Subject{Name: "Physics", Code: "PHYS001", Description: "Physics"}
-		testDB.Create(subject1)
-		testDB.Create(subject2)
-
-		// Filtrer par nom
-		filter := &models.SubjectFilter{Name: "Math"}
-		subjects, err := repo.GetAllSubjects(filter)
-		assert.NoError(t, err)
-		assert.Len(t, subjects, 1)
-		assert.Equal(t, "Math", subjects[0].Name)
-	})
 
 	t.Run("UpdateSubject_Success", func(t *testing.T) {
-		repo := repositories.NewSubjectRepository(testDB)
+		repo := repositories.NewSubjectRepository()
 
 		// Créer une matière
 		subject := createTestSubject()
@@ -168,7 +153,7 @@ func TestSubjectRepository(t *testing.T) {
 	})
 
 	t.Run("DeleteSubject_Success", func(t *testing.T) {
-		repo := repositories.NewSubjectRepository(testDB)
+		repo := repositories.NewSubjectRepository()
 
 		// Créer une matière
 		subject := createTestSubject()
@@ -183,7 +168,7 @@ func TestSubjectRepository(t *testing.T) {
 	})
 
 	t.Run("CheckSubjectExists_Exists", func(t *testing.T) {
-		repo := repositories.NewSubjectRepository(testDB)
+		repo := repositories.NewSubjectRepository()
 
 		// Créer une matière
 		subject := createTestSubject()
@@ -195,7 +180,7 @@ func TestSubjectRepository(t *testing.T) {
 	})
 
 	t.Run("CheckSubjectExists_NotExists", func(t *testing.T) {
-		repo := repositories.NewSubjectRepository(testDB)
+		repo := repositories.NewSubjectRepository()
 
 		// Vérifier qu'une matière inexistante n'existe pas
 		exists, err := repo.CheckSubjectExists("NonExistentSubject", nil)
@@ -204,7 +189,7 @@ func TestSubjectRepository(t *testing.T) {
 	})
 
 	t.Run("CheckSubjectCodeExists_Exists", func(t *testing.T) {
-		repo := repositories.NewSubjectRepository(testDB)
+		repo := repositories.NewSubjectRepository()
 
 		// Créer une matière
 		subject := createTestSubject()
@@ -216,7 +201,7 @@ func TestSubjectRepository(t *testing.T) {
 	})
 
 	t.Run("CheckSubjectCodeExists_NotExists", func(t *testing.T) {
-		repo := repositories.NewSubjectRepository(testDB)
+		repo := repositories.NewSubjectRepository()
 
 		// Vérifier qu'un code inexistant n'existe pas
 		exists, err := repo.CheckSubjectCodeExists("NONEXISTENT", nil)
@@ -230,7 +215,7 @@ func TestSubjectService(t *testing.T) {
 	cleanupTestDatabase()
 
 	t.Run("CreateSubject_Success", func(t *testing.T) {
-		repo := repositories.NewSubjectRepository(testDB)
+		repo := repositories.NewSubjectRepository()
 		service := services.NewSubjectService(repo)
 
 		req := &models.CreateSubjectRequest{
@@ -248,7 +233,7 @@ func TestSubjectService(t *testing.T) {
 	})
 
 	t.Run("CreateSubject_EmptyName_ShouldFail", func(t *testing.T) {
-		repo := repositories.NewSubjectRepository(testDB)
+		repo := repositories.NewSubjectRepository()
 		service := services.NewSubjectService(repo)
 
 		req := &models.CreateSubjectRequest{
@@ -262,7 +247,7 @@ func TestSubjectService(t *testing.T) {
 	})
 
 	t.Run("CreateSubject_EmptyCode_ShouldFail", func(t *testing.T) {
-		repo := repositories.NewSubjectRepository(testDB)
+		repo := repositories.NewSubjectRepository()
 		service := services.NewSubjectService(repo)
 
 		req := &models.CreateSubjectRequest{
@@ -276,7 +261,7 @@ func TestSubjectService(t *testing.T) {
 	})
 
 	t.Run("GetSubjectByID_Success", func(t *testing.T) {
-		repo := repositories.NewSubjectRepository(testDB)
+		repo := repositories.NewSubjectRepository()
 		service := services.NewSubjectService(repo)
 
 		// Créer une matière
@@ -291,7 +276,7 @@ func TestSubjectService(t *testing.T) {
 	})
 
 	t.Run("UpdateSubject_Success", func(t *testing.T) {
-		repo := repositories.NewSubjectRepository(testDB)
+		repo := repositories.NewSubjectRepository()
 		service := services.NewSubjectService(repo)
 
 		// Créer une matière
@@ -311,7 +296,7 @@ func TestSubjectService(t *testing.T) {
 	})
 
 	t.Run("GetAllSubjects_Success", func(t *testing.T) {
-		repo := repositories.NewSubjectRepository(testDB)
+		repo := repositories.NewSubjectRepository()
 		service := services.NewSubjectService(repo)
 
 		// Créer plusieurs matières
@@ -320,13 +305,13 @@ func TestSubjectService(t *testing.T) {
 		createTestSubject()
 
 		// Récupérer toutes les matières
-		subjects, err := service.GetAllSubjects(nil)
+		subjects, err := service.GetAllSubjects()
 		assert.NoError(t, err)
 		assert.Len(t, subjects, 3)
 	})
 
 	t.Run("DeleteSubject_Success", func(t *testing.T) {
-		repo := repositories.NewSubjectRepository(testDB)
+		repo := repositories.NewSubjectRepository()
 		service := services.NewSubjectService(repo)
 
 		// Créer une matière

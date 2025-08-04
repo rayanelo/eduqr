@@ -14,7 +14,7 @@ func TestUserRepository(t *testing.T) {
 	cleanupTestDatabase()
 
 	t.Run("CreateUser_Success", func(t *testing.T) {
-		repo := repositories.NewUserRepository(testDB)
+		repo := repositories.NewUserRepository()
 
 		user := &models.User{
 			Email:     "test@eduqr.com",
@@ -33,7 +33,7 @@ func TestUserRepository(t *testing.T) {
 	})
 
 	t.Run("CreateUser_DuplicateEmail_ShouldFail", func(t *testing.T) {
-		repo := repositories.NewUserRepository(testDB)
+		repo := repositories.NewUserRepository()
 
 		// Créer le premier utilisateur
 		user1 := &models.User{
@@ -59,7 +59,7 @@ func TestUserRepository(t *testing.T) {
 	})
 
 	t.Run("GetUserByID_Success", func(t *testing.T) {
-		repo := repositories.NewUserRepository(testDB)
+		repo := repositories.NewUserRepository()
 
 		// Créer un utilisateur
 		user := createTestUser("student")
@@ -72,7 +72,7 @@ func TestUserRepository(t *testing.T) {
 	})
 
 	t.Run("GetUserByID_NotFound", func(t *testing.T) {
-		repo := repositories.NewUserRepository(testDB)
+		repo := repositories.NewUserRepository()
 
 		// Essayer de récupérer un utilisateur inexistant
 		_, err := repo.GetUserByID(99999)
@@ -80,7 +80,7 @@ func TestUserRepository(t *testing.T) {
 	})
 
 	t.Run("GetUserByEmail_Success", func(t *testing.T) {
-		repo := repositories.NewUserRepository(testDB)
+		repo := repositories.NewUserRepository()
 
 		// Créer un utilisateur
 		user := createTestUser("teacher")
@@ -93,7 +93,7 @@ func TestUserRepository(t *testing.T) {
 	})
 
 	t.Run("GetUserByEmail_NotFound", func(t *testing.T) {
-		repo := repositories.NewUserRepository(testDB)
+		repo := repositories.NewUserRepository()
 
 		// Essayer de récupérer un utilisateur avec un email inexistant
 		_, err := repo.GetUserByEmail("nonexistent@eduqr.com")
@@ -101,7 +101,7 @@ func TestUserRepository(t *testing.T) {
 	})
 
 	t.Run("GetAllUsers_Success", func(t *testing.T) {
-		repo := repositories.NewUserRepository(testDB)
+		repo := repositories.NewUserRepository()
 
 		// Créer plusieurs utilisateurs
 		createTestUser("student")
@@ -115,7 +115,7 @@ func TestUserRepository(t *testing.T) {
 	})
 
 	t.Run("GetAllUsers_WithRoleFilter", func(t *testing.T) {
-		repo := repositories.NewUserRepository(testDB)
+		repo := repositories.NewUserRepository()
 
 		// Créer des utilisateurs avec différents rôles
 		createTestUser("student")
@@ -131,7 +131,7 @@ func TestUserRepository(t *testing.T) {
 	})
 
 	t.Run("UpdateUser_Success", func(t *testing.T) {
-		repo := repositories.NewUserRepository(testDB)
+		repo := repositories.NewUserRepository()
 
 		// Créer un utilisateur
 		user := createTestUser("student")
@@ -153,7 +153,7 @@ func TestUserRepository(t *testing.T) {
 	})
 
 	t.Run("DeleteUser_Success", func(t *testing.T) {
-		repo := repositories.NewUserRepository(testDB)
+		repo := repositories.NewUserRepository()
 
 		// Créer un utilisateur
 		user := createTestUser("student")
@@ -168,7 +168,7 @@ func TestUserRepository(t *testing.T) {
 	})
 
 	t.Run("GetUsersByRole_Success", func(t *testing.T) {
-		repo := repositories.NewUserRepository(testDB)
+		repo := repositories.NewUserRepository()
 
 		// Créer des utilisateurs avec différents rôles
 		createTestUser("student")
@@ -187,7 +187,7 @@ func TestUserRepository(t *testing.T) {
 	})
 
 	t.Run("CheckUserExists_Exists", func(t *testing.T) {
-		repo := repositories.NewUserRepository(testDB)
+		repo := repositories.NewUserRepository()
 
 		// Créer un utilisateur
 		user := createTestUser("student")
@@ -199,7 +199,7 @@ func TestUserRepository(t *testing.T) {
 	})
 
 	t.Run("CheckUserExists_NotExists", func(t *testing.T) {
-		repo := repositories.NewUserRepository(testDB)
+		repo := repositories.NewUserRepository()
 
 		// Vérifier qu'un utilisateur inexistant n'existe pas
 		exists, err := repo.CheckUserExists("nonexistent@eduqr.com", nil)
@@ -213,7 +213,7 @@ func TestUserService(t *testing.T) {
 	cleanupTestDatabase()
 
 	t.Run("CreateUser_Success", func(t *testing.T) {
-		repo := repositories.NewUserRepository(testDB)
+		repo := repositories.NewUserRepository()
 		service := services.NewUserService(repo)
 
 		req := &models.CreateUserRequest{
@@ -236,7 +236,7 @@ func TestUserService(t *testing.T) {
 	})
 
 	t.Run("CreateUser_InvalidEmail_ShouldFail", func(t *testing.T) {
-		repo := repositories.NewUserRepository(testDB)
+		repo := repositories.NewUserRepository()
 		service := services.NewUserService(repo)
 
 		req := &models.CreateUserRequest{
@@ -252,7 +252,7 @@ func TestUserService(t *testing.T) {
 	})
 
 	t.Run("CreateUser_EmptyPassword_ShouldFail", func(t *testing.T) {
-		repo := repositories.NewUserRepository(testDB)
+		repo := repositories.NewUserRepository()
 		service := services.NewUserService(repo)
 
 		req := &models.CreateUserRequest{
@@ -268,7 +268,7 @@ func TestUserService(t *testing.T) {
 	})
 
 	t.Run("GetUserByID_Success", func(t *testing.T) {
-		repo := repositories.NewUserRepository(testDB)
+		repo := repositories.NewUserRepository()
 		service := services.NewUserService(repo)
 
 		// Créer un utilisateur
@@ -282,7 +282,7 @@ func TestUserService(t *testing.T) {
 	})
 
 	t.Run("UpdateUser_Success", func(t *testing.T) {
-		repo := repositories.NewUserRepository(testDB)
+		repo := repositories.NewUserRepository()
 		service := services.NewUserService(repo)
 
 		// Créer un utilisateur
@@ -304,7 +304,7 @@ func TestUserService(t *testing.T) {
 	})
 
 	t.Run("GetAllUsers_Success", func(t *testing.T) {
-		repo := repositories.NewUserRepository(testDB)
+		repo := repositories.NewUserRepository()
 		service := services.NewUserService(repo)
 
 		// Créer plusieurs utilisateurs
@@ -319,7 +319,7 @@ func TestUserService(t *testing.T) {
 	})
 
 	t.Run("DeleteUser_Success", func(t *testing.T) {
-		repo := repositories.NewUserRepository(testDB)
+		repo := repositories.NewUserRepository()
 		service := services.NewUserService(repo)
 
 		// Créer un utilisateur
